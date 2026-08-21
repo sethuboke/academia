@@ -85,7 +85,9 @@ class SaisieInterrogationView(_SaisieNotesBaseView):
 
 class SaisieDevoirView(_SaisieNotesBaseView):
     def dispatch(self, request, *args, **kwargs):
-        self.numero = kwargs["numero"]
+        # On retire "numero" des kwargs pour qu'il ne soit pas transmis à
+        # get()/post() de la classe de base (qui ne l'accepte pas).
+        self.numero = kwargs.pop("numero")
         self.type_note = f"Devoir {self.numero}"
         return super().dispatch(request, *args, **kwargs)
 
