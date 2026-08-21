@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Modifier{% else %}Nouvelle{% endif %} classe — Academia{% endblock %}
+{% block page_title %}{% if object %}Modifier la classe{% else %}Nouvelle classe{% endif %}{% endblock %}
+{% block page_subtitle %}Gestion des classes{% endblock %}
+{% block mobile_page_title %}{% if object %}Modifier la classe{% else %}Nouvelle classe{% endif %}{% endblock %}
+{% block mobile_page_subtitle %}Gestion des classes{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Fil d'ariane -->
+    <a href="{% url 'academics:classe_list' %}" class="inline-flex items-center gap-2 text-sm font-medium text-blue-bell-600 hover:text-blue-bell-800 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Retour aux classes
+    </a>
+
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-blue-bell-100 bg-gradient-to-r from-blue-bell-50 to-deep-lilac-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-bell-500 flex items-center justify-center text-white shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                </div>
+                <div>
+                    <h2 class="font-semibold text-blue-bell-900">{% if object %}Modifier la classe{% else %}Créer une classe{% endif %}</h2>
+                    <p class="text-xs text-blue-bell-600">Choisissez l'année scolaire et le nom de la classe</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="p-6 space-y-5">
+            {% csrf_token %}
+            {% include "includes/form_fields.html" %}
+
+            <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-blue-bell-50">
+                <a href="{% url 'academics:classe_list' %}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-blue-bell-200 text-blue-bell-700 text-sm font-medium hover:bg-blue-bell-50 transition">
+                    Annuler
+                </a>
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium shadow-sm transition">
+                    {% if object %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Enregistrer les modifications
+                    {% else %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Créer la classe
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if not object %}
+    <!-- Note d'aide -->
+    <div class="bg-white rounded-2xl border border-blue-bell-100 p-5 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-lg bg-saffron-50 flex items-center justify-center text-saffron-600 shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <p class="text-sm text-blue-bell-700">
+            <strong class="font-semibold">Astuce :</strong> après la création, vous pourrez ajouter les matières, les semestres et les élèves directement depuis la page de la classe.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

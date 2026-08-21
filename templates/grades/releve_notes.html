@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Relevé — {{ classe_matiere.matiere.nom }} — Academia{% endblock %}
+{% block page_title %}Relevé de notes{% endblock %}
+{% block page_subtitle %}{{ classe_matiere.matiere.nom }} — {{ classe_matiere.classe.nom }} — {{ semestre.get_libelle_display }}{% endblock %}
+{% block mobile_page_title %}Relevé de notes{% endblock %}
+{% block mobile_page_subtitle %}{{ classe_matiere.matiere.nom }} — {{ semestre.get_libelle_display }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <a href="{% url 'academics:classe_detail' classe_matiere.classe.pk %}" class="inline-flex items-center gap-2 text-sm font-medium text-blue-bell-600 hover:text-blue-bell-800 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Retour à la classe
+        </a>
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="{% url 'grades:saisie_interrogation' classe_matiere.pk semestre.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span class="hidden sm:inline">Saisir interro</span>
+                <span class="sm:hidden">Interro</span>
+            </a>
+            <a href="{% url 'grades:saisie_devoir' classe_matiere.pk semestre.pk 1 %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-deep-lilac-50 hover:bg-deep-lilac-100 text-deep-lilac-700 text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span class="hidden sm:inline">Saisir devoir 1</span>
+                <span class="sm:hidden">Devoir 1</span>
+            </a>
+            <a href="{% url 'grades:saisie_devoir' classe_matiere.pk semestre.pk 2 %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-deep-lilac-50 hover:bg-deep-lilac-100 text-deep-lilac-700 text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span class="hidden sm:inline">Saisir devoir 2</span>
+                <span class="sm:hidden">Devoir 2</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Bandeau validation -->
+    {% if reste_a_valider %}
+    <div class="bg-saffron-50 border border-saffron-200 rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-saffron-500 flex items-center justify-center text-white shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-saffron-800">Des notes ne sont pas encore validées</p>
+                <p class="text-xs text-saffron-700">Les élèves ne peuvent pas les consulter tant qu'elles ne sont pas validées.</p>
+            </div>
+        </div>
+        <form method="post" action="{% url 'grades:valider_notes' classe_matiere.pk semestre.pk %}" onsubmit="return confirm('Valider toutes les notes non validées ? Elles deviendront visibles par les élèves.')">
+            {% csrf_token %}
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-jungle-green-500 hover:bg-jungle-green-600 text-white text-sm font-medium shadow-sm transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Valider les notes
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div class="bg-jungle-green-50 border border-jungle-green-200 rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-jungle-green-500 flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <p class="text-sm font-medium text-jungle-green-800">Toutes les notes sont validées et visibles par les élèves.</p>
+    </div>
+    {% endif %}
+
+    <!-- Tableau des notes -->
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-blue-bell-100 flex items-center justify-between">
+            <h2 class="font-semibold text-blue-bell-900">Notes des élèves <span class="text-sm font-normal text-blue-bell-600">({{ lignes|length }})</span></h2>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-bell-50 text-blue-bell-700 text-xs font-medium">
+                Coef. {{ classe_matiere.coefficient }}
+            </span>
+        </div>
+
+        {% if lignes %}
+        <!-- En-têtes desktop -->
+        <div class="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-blue-bell-50/50 border-b border-blue-bell-100 text-xs font-semibold text-blue-bell-700 uppercase tracking-wide">
+            <div class="col-span-4">Élève</div>
+            <div class="col-span-2">Interros</div>
+            <div class="col-span-2">Devoirs</div>
+            <div class="col-span-2">Moyenne</div>
+            <div class="col-span-2">Statut</div>
+        </div>
+
+        <div class="divide-y divide-blue-bell-50">
+            {% for ligne in lignes %}
+            <div class="px-5 py-3.5 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center">
+                <div class="md:col-span-4 flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-jungle-green-50 flex items-center justify-center text-jungle-green-600 font-bold text-sm shrink-0">
+                        {{ ligne.eleve.prenom|slice:":1"|upper }}{{ ligne.eleve.nom|slice:":1"|upper }}
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-medium text-blue-bell-900 truncate">{{ ligne.eleve.prenom }} {{ ligne.eleve.nom }}</div>
+                        <div class="text-xs text-blue-bell-600 md:hidden">Interros : {{ ligne.interros|length }} · Devoirs : {{ ligne.devoirs|length }}</div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for interro in ligne.interros %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium {% if interro.valide %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-saffron-50 text-saffron-700{% endif %}">
+                            {{ interro.note }}
+                        </span>
+                        {% empty %}
+                        <span class="text-xs text-blue-bell-400">—</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for devoir in ligne.devoirs %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium {% if devoir.valide %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-saffron-50 text-saffron-700{% endif %}">
+                            D{{ devoir.numero }}: {{ devoir.note }}
+                        </span>
+                        {% empty %}
+                        <span class="text-xs text-blue-bell-400">—</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    {% if ligne.moyenne %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold {% if ligne.moyenne >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">
+                        {{ ligne.moyenne }}
+                    </span>
+                    {% else %}
+                    <span class="text-xs text-blue-bell-400">—</span>
+                    {% endif %}
+                </div>
+
+                <div class="md:col-span-2">
+                    {% if ligne.interros or ligne.devoirs %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {% if ligne.interros.all|length and ligne.devoirs.all|length %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-saffron-50 text-saffron-700{% endif %}">
+                        <span class="w-1.5 h-1.5 rounded-full {% if ligne.interros.all|length and ligne.devoirs.all|length %}bg-jungle-green-500{% else %}bg-saffron-500{% endif %}"></span>
+                        {% if ligne.interros.all|length and ligne.devoirs.all|length %}Complet{% else %}Partiel{% endif %}
+                    </span>
+                    {% else %}
+                    <span class="text-xs text-blue-bell-400">Aucune note</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-10 text-center">
+            <div class="mx-auto w-14 h-14 rounded-2xl bg-blue-bell-50 flex items-center justify-center mb-3">
+                <svg class="w-7 h-7 text-blue-bell-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            <p class="text-sm text-blue-bell-600 mb-4">Aucun élève dans cette classe.</p>
+            <a href="{% url 'academics:eleve_create' classe_matiere.classe.pk %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                Ajouter un élève
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

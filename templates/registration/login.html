@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Academia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blue-bell': {
+                            50: '#e9f3fb', 100: '#d4e7f7', 200: '#a8d0f0', 300: '#7db8e8',
+                            400: '#52a0e0', 500: '#2688d9', 600: '#1f6dad', 700: '#175282',
+                            800: '#0f3757', 900: '#081b2b', 950: '#05131e',
+                        },
+                        'lobster-pink': {
+                            50: '#fbe9e9', 100: '#f7d4d4', 200: '#f0a8a8', 300: '#e87d7d',
+                            400: '#e05252', 500: '#d92626', 600: '#ad1f1f', 700: '#821717',
+                            800: '#570f0f', 900: '#2b0808', 950: '#1e0505',
+                        },
+                        'saffron': {
+                            50: '#fcf8e9', 100: '#f9f1d2', 200: '#f2e3a6', 300: '#ecd579',
+                            400: '#e6c74c', 500: '#dfb920', 600: '#b39419', 700: '#866f13',
+                            800: '#594a0d', 900: '#2d2506', 950: '#1f1a04',
+                        },
+                        'jungle-green': {
+                            50: '#ecf9f2', 100: '#d9f2e5', 200: '#b3e6ca', 300: '#8cd9b0',
+                            400: '#66cc96', 500: '#40bf7b', 600: '#339963', 700: '#26734a',
+                            800: '#194d31', 900: '#0d2619', 950: '#091b11',
+                        },
+                        'deep-lilac': {
+                            50: '#f0eef6', 100: '#e1deed', 200: '#c3bddb', 300: '#a59cc9',
+                            400: '#887ab8', 500: '#6a59a6', 600: '#554785', 700: '#3f3663',
+                            800: '#2a2442', 900: '#151221', 950: '#0f0c17',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-bell-900 via-blue-bell-800 to-deep-lilac-900 flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20 mb-4">
+                <span class="text-3xl font-bold text-white">A</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Academia</h1>
+            <p class="text-blue-bell-200 mt-1 text-sm">Gestion des notes et moyennes académiques</p>
+        </div>
+
+        <!-- Carte de connexion -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="px-6 py-5 border-b border-blue-bell-100 bg-blue-bell-50">
+                <h2 class="font-semibold text-blue-bell-900">Connexion</h2>
+                <p class="text-xs text-blue-bell-600 mt-0.5">Accédez à votre espace enseignant</p>
+            </div>
+
+            <form method="post" class="p-6 space-y-5">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="p-4 rounded-xl bg-lobster-pink-50 border border-lobster-pink-200">
+                    {% for error in form.non_field_errors %}
+                    <p class="text-sm font-medium text-lobster-pink-700">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="space-y-1.5">
+                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-blue-bell-800">Nom d'utilisateur</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-bell-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </span>
+                        <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" placeholder="Votre nom d'utilisateur" class="w-full pl-11 pr-4 py-3 rounded-xl border border-blue-bell-200 bg-white text-blue-bell-900 placeholder-blue-bell-400 focus:outline-none focus:ring-2 focus:ring-blue-bell-500 focus:border-transparent transition text-sm">
+                    </div>
+                    {% if form.username.errors %}
+                    <div class="space-y-1">
+                        {% for error in form.username.errors %}
+                        <p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-blue-bell-800">Mot de passe</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-bell-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </span>
+                        <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" placeholder="Votre mot de passe" class="w-full pl-11 pr-4 py-3 rounded-xl border border-blue-bell-200 bg-white text-blue-bell-900 placeholder-blue-bell-400 focus:outline-none focus:ring-2 focus:ring-blue-bell-500 focus:border-transparent transition text-sm">
+                    </div>
+                    {% if form.password.errors %}
+                    <div class="space-y-1">
+                        {% for error in form.password.errors %}
+                        <p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-semibold shadow-lg shadow-blue-bell-500/30 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    Se connecter
+                </button>
+            </form>
+        </div>
+
+        <p class="text-center text-blue-bell-300 text-xs mt-6">Academia &copy; {% now "Y" %} — Application personnelle de gestion académique</p>
+    </div>
+</body>
+</html>

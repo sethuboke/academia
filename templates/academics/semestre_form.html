@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Modifier{% else %}Nouveau{% endif %} semestre — Academia{% endblock %}
+{% block page_title %}{% if object %}Modifier le semestre{% else %}Nouveau semestre{% endif %}{% endblock %}
+{% block page_subtitle %}Gestion des semestres{% endblock %}
+{% block mobile_page_title %}{% if object %}Modifier le semestre{% else %}Nouveau semestre{% endif %}{% endblock %}
+{% block mobile_page_subtitle %}Gestion des semestres{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <a href="{% url 'academics:semestre_list' %}" class="inline-flex items-center gap-2 text-sm font-medium text-blue-bell-600 hover:text-blue-bell-800 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Retour aux semestres
+    </a>
+
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-blue-bell-100 bg-gradient-to-r from-blue-bell-50 to-deep-lilac-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-bell-500 flex items-center justify-center text-white shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                <div>
+                    <h2 class="font-semibold text-blue-bell-900">{% if object %}Modifier le semestre{% else %}Créer un semestre{% endif %}</h2>
+                    <p class="text-xs text-blue-bell-600">Choisissez l'année scolaire et le semestre (S1 ou S2)</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="p-6 space-y-5">
+            {% csrf_token %}
+            {% include "includes/form_fields.html" %}
+
+            <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-blue-bell-50">
+                <a href="{% url 'academics:semestre_list' %}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-blue-bell-200 text-blue-bell-700 text-sm font-medium hover:bg-blue-bell-50 transition">
+                    Annuler
+                </a>
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium shadow-sm transition">
+                    {% if object %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Enregistrer les modifications
+                    {% else %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Créer le semestre
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

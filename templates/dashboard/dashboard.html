@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord — Academia{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block page_subtitle %}{% if annee_courante %}Année scolaire {{ annee_courante.libelle }}{% else %}Vue d'ensemble de l'établissement{% endif %}{% endblock %}
+{% block mobile_page_title %}Tableau de bord{% endblock %}
+{% block mobile_page_subtitle %}{% if annee_courante %}Année {{ annee_courante.libelle }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Cartes statistiques -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-blue-bell-600 uppercase tracking-wider">Classes</p>
+                    <p class="text-3xl font-bold text-blue-bell-900 mt-1">{{ total_classes }}</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-blue-bell-50 flex items-center justify-center text-blue-bell-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                </div>
+            </div>
+            <a href="{% url 'academics:classe_list' %}" class="mt-3 inline-flex items-center gap-1 text-xs font-medium text-blue-bell-500 hover:text-blue-bell-700 transition">
+                Voir les classes
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-blue-bell-600 uppercase tracking-wider">Élèves</p>
+                    <p class="text-3xl font-bold text-blue-bell-900 mt-1">{{ total_eleves }}</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-jungle-green-50 flex items-center justify-center text-jungle-green-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+            </div>
+            <p class="mt-3 text-xs text-blue-bell-500">Inscrits dans toutes les classes</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-blue-bell-600 uppercase tracking-wider">Matières</p>
+                    <p class="text-3xl font-bold text-blue-bell-900 mt-1">{{ total_matieres }}</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-deep-lilac-50 flex items-center justify-center text-deep-lilac-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
+            </div>
+            <a href="{% url 'academics:matiere_list' %}" class="mt-3 inline-flex items-center gap-1 text-xs font-medium text-blue-bell-500 hover:text-blue-bell-700 transition">
+                Gérer les matières
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-blue-bell-600 uppercase tracking-wider">Absences</p>
+                    <p class="text-3xl font-bold text-blue-bell-900 mt-1">{{ total_absences }}</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-saffron-50 flex items-center justify-center text-saffron-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+            <p class="mt-3 text-xs text-blue-bell-500">Retards et absences enregistrés</p>
+        </div>
+    </div>
+
+    <!-- Notes saisies -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-blue-bell-900">Interrogations</h3>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-bell-50 text-blue-bell-700 text-xs font-medium">
+                    {{ total_interrogations }} saisie{{ total_interrogations|pluralize:"s" }}
+                </span>
+            </div>
+            <p class="text-sm text-blue-bell-600">Notes d'interrogations saisies (max 4 par matière et semestre).</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-blue-bell-900">Devoirs</h3>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-deep-lilac-50 text-deep-lilac-700 text-xs font-medium">
+                    {{ total_devoirs }} saisie{{ total_devoirs|pluralize:"s" }}
+                </span>
+            </div>
+            <p class="text-sm text-blue-bell-600">Notes de devoirs (Devoir 1 et Devoir 2) saisies.</p>
+        </div>
+    </div>
+
+    <!-- Classes récentes -->
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-blue-bell-100 flex items-center justify-between">
+            <h3 class="font-semibold text-blue-bell-900">Classes récentes</h3>
+            <a href="{% url 'academics:classe_list' %}" class="inline-flex items-center gap-1 text-sm font-medium text-blue-bell-500 hover:text-blue-bell-700 transition">
+                Tout voir
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+        {% if classes %}
+        <div class="divide-y divide-blue-bell-50">
+            {% for classe in classes %}
+            <a href="{% url 'academics:classe_detail' classe.pk %}" class="flex items-center justify-between px-6 py-4 hover:bg-blue-bell-50/50 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-bell-50 flex items-center justify-center text-blue-bell-600 font-bold shrink-0">
+                        {{ classe.nom|slice:":2"|upper }}
+                    </div>
+                    <div>
+                        <p class="font-medium text-blue-bell-900">{{ classe.nom }}</p>
+                        <p class="text-xs text-blue-bell-600">{{ classe.annee_scolaire.libelle }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs text-blue-bell-600">{{ classe.eleves.count }} élève{{ classe.eleves.count|pluralize:"s" }}</span>
+                    <svg class="w-4 h-4 text-blue-bell-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-10 text-center">
+            <p class="text-sm text-blue-bell-600 mb-4">Aucune classe pour le moment.</p>
+            <a href="{% url 'academics:classe_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium shadow-sm transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Créer une classe
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

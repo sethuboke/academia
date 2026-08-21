@@ -1,0 +1,7 @@
+LOGIN: 200
+CLASSES (non auth): 302 (attendu 302)
+LOGIN OK: True
+CLASSES (auth): 200
+CLASSE CREATE: 200
+STUDENT ACCESS (404 attendu): 404
+=== TESTS TERMINÉS ===

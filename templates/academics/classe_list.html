@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Mes classes — Academia{% endblock %}
+{% block page_title %}Mes classes{% endblock %}
+{% block page_subtitle %}Gérez vos classes et vos élèves{% endblock %}
+{% block mobile_page_title %}Mes classes{% endblock %}
+{% block mobile_page_subtitle %}Gérez vos classes et vos élèves{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- En-tête d'action (mobile first) -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <h2 class="text-lg font-semibold text-blue-bell-900 md:text-xl">Liste des classes</h2>
+        <a href="{% url 'academics:classe_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span class="hidden sm:inline">Nouvelle classe</span>
+            <span class="sm:hidden">Ajouter</span>
+        </a>
+    </div>
+
+    {% if classes %}
+    <!-- Grille de classes -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for classe in classes %}
+        <a href="{% url 'academics:classe_detail' classe.pk %}" class="group relative bg-white rounded-2xl border border-blue-bell-100 shadow-sm hover:shadow-md hover:border-blue-bell-300 transition overflow-hidden">
+            <!-- Bandeau coloré top -->
+            <div class="h-1.5 bg-gradient-to-r from-blue-bell-500 via-deep-lilac-500 to-jungle-green-500"></div>
+            <div class="p-5">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-blue-bell-50 flex items-center justify-center text-blue-bell-600 font-bold text-lg shrink-0">
+                            {{ classe.nom|slice:":2"|upper }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-blue-bell-900 group-hover:text-blue-bell-600 transition">{{ classe.nom }}</h3>
+                            <p class="text-xs text-blue-bell-600">{{ classe.annee_scolaire.libelle }}</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-jungle-green-50 text-jungle-green-700 text-xs font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full bg-jungle-green-500"></span>
+                        {{ classe.eleves.count }} élève{{ classe.eleves.count|pluralize:"s" }}
+                    </span>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <span class="text-xs text-blue-bell-600">{{ classe.classe_matieres.count }} matière{{ classe.classe_matieres.count|pluralize:"s" }}</span>
+                    <span class="inline-flex items-center gap-1 text-sm font-medium text-blue-bell-500 group-hover:text-blue-bell-600 transition">
+                        Gérer
+                        <svg class="w-4 h-4 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- État vide -->
+    <div class="bg-white rounded-2xl border border-dashed border-blue-bell-200 p-10 text-center">
+        <div class="mx-auto w-16 h-16 rounded-2xl bg-blue-bell-50 flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-blue-bell-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-blue-bell-900 mb-2">Aucune classe pour le moment</h3>
+        <p class="text-sm text-blue-bell-600 mb-6">Commencez par créer votre première classe pour gérer les élèves et leurs notes.</p>
+        <a href="{% url 'academics:classe_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Créer votre première classe
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

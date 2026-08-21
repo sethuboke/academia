@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Supprimer la classe — Academia{% endblock %}
+{% block page_title %}Supprimer la classe{% endblock %}
+{% block page_subtitle %}{{ classe.nom }} ({{ classe.annee_scolaire.libelle }}){% endblock %}
+{% block mobile_page_title %}Supprimer la classe{% endblock %}
+{% block mobile_page_subtitle %}{{ classe.nom }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white rounded-2xl border border-lobster-pink-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-lobster-pink-100 bg-lobster-pink-50 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-lobster-pink-500 flex items-center justify-center text-white shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+                <h2 class="font-semibold text-lobster-pink-700">Confirmer la suppression</h2>
+                <p class="text-xs text-lobster-pink-600">Cette action est irréversible</p>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-blue-bell-800">
+                Êtes-vous sûr de vouloir supprimer la classe
+                <strong class="font-semibold text-lobster-pink-700">« {{ classe.nom }} »</strong>
+                de l'année <strong class="font-semibold">{{ classe.annee_scolaire.libelle }}</strong> ?
+            </p>
+
+            {% if classe.eleves.count or classe.classe_matieres.count %}
+            <div class="p-4 rounded-xl bg-saffron-50 border border-saffron-200">
+                <p class="text-sm text-saffron-800 font-medium">
+                    Attention : cette classe contient
+                    <strong>{{ classe.eleves.count }} élève{{ classe.eleves.count|pluralize:"s" }}</strong> et
+                    <strong>{{ classe.classe_matieres.count }} matière{{ classe.classe_matieres.count|pluralize:"s" }}</strong>.
+                    Toutes les données associées (notes, absences, élèves) seront définitivement supprimées.
+                </p>
+            </div>
+            {% endif %}
+
+            <form method="post" class="pt-2 space-y-3">
+                {% csrf_token %}
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
+                    <a href="{% url 'academics:classe_detail' classe.pk %}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-blue-bell-200 text-blue-bell-700 text-sm font-medium hover:bg-blue-bell-50 transition">
+                        Annuler
+                    </a>
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-lobster-pink-500 hover:bg-lobster-pink-600 text-white text-sm font-medium shadow-sm transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Oui, supprimer définitivement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

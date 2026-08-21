@@ -1,0 +1,214 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation des notes — {{ classe.nom }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blue-bell': {
+                            50: '#e9f3fb', 100: '#d4e7f7', 200: '#a8d0f0', 300: '#7db8e8',
+                            400: '#52a0e0', 500: '#2688d9', 600: '#1f6dad', 700: '#175282',
+                            800: '#0f3757', 900: '#081b2b', 950: '#05131e',
+                        },
+                        'lobster-pink': {
+                            50: '#fbe9e9', 100: '#f7d4d4', 200: '#f0a8a8', 300: '#e87d7d',
+                            400: '#e05252', 500: '#d92626', 600: '#ad1f1f', 700: '#821717',
+                            800: '#570f0f', 900: '#2b0808', 950: '#1e0505',
+                        },
+                        'saffron': {
+                            50: '#fcf8e9', 100: '#f9f1d2', 200: '#f2e3a6', 300: '#ecd579',
+                            400: '#e6c74c', 500: '#dfb920', 600: '#b39419', 700: '#866f13',
+                            800: '#594a0d', 900: '#2d2506', 950: '#1f1a04',
+                        },
+                        'jungle-green': {
+                            50: '#ecf9f2', 100: '#d9f2e5', 200: '#b3e6ca', 300: '#8cd9b0',
+                            400: '#66cc96', 500: '#40bf7b', 600: '#339963', 700: '#26734a',
+                            800: '#194d31', 900: '#0d2619', 950: '#091b11',
+                        },
+                        'deep-lilac': {
+                            50: '#f0eef6', 100: '#e1deed', 200: '#c3bddb', 300: '#a59cc9',
+                            400: '#887ab8', 500: '#6a59a6', 600: '#554785', 700: '#3f3663',
+                            800: '#2a2442', 900: '#151221', 950: '#0f0c17',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-blue-bell-50 text-blue-bell-950 antialiased">
+    <div class="min-h-screen flex flex-col">
+        <!-- En-tête -->
+        <header class="bg-gradient-to-r from-blue-bell-700 to-deep-lilac-700 text-white">
+            <div class="max-w-3xl mx-auto px-4 py-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg">A</div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight">Academia</h1>
+                        <p class="text-xs text-blue-bell-200">Consultation des notes</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
+            <!-- Bandeau classe -->
+            <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-blue-bell-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                        {{ classe.nom|slice:":2"|upper }}
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-blue-bell-900">{{ classe.nom }}</h2>
+                        <p class="text-xs text-blue-bell-600">Année scolaire {{ classe.annee_scolaire.libelle }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if not eleve %}
+            <!-- Formulaire d'identification -->
+            <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-5 border-b border-blue-bell-100 bg-blue-bell-50">
+                    <h2 class="font-semibold text-blue-bell-900">Consulter mes notes</h2>
+                    <p class="text-xs text-blue-bell-600 mt-0.5">Entrez votre nom et votre prénom pour accéder à vos résultats.</p>
+                </div>
+                <form method="post" class="p-6 space-y-4">
+                    {% csrf_token %}
+                    <div class="space-y-1.5">
+                        <label for="{{ form.nom.id_for_label }}" class="block text-sm font-medium text-blue-bell-800">Nom</label>
+                        {{ form.nom }}
+                        {% if form.nom.errors %}
+                        <div class="space-y-1">
+                            {% for error in form.nom.errors %}
+                            <p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="space-y-1.5">
+                        <label for="{{ form.prenom.id_for_label }}" class="block text-sm font-medium text-blue-bell-800">Prénom</label>
+                        {{ form.prenom }}
+                        {% if form.prenom.errors %}
+                        <div class="space-y-1">
+                            {% for error in form.prenom.errors %}
+                            <p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-semibold shadow-sm transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        Voir mes notes
+                    </button>
+                </form>
+            </div>
+
+            {% if form.errors and not form.non_field_errors %}
+            <div class="p-4 rounded-xl bg-lobster-pink-50 border border-lobster-pink-200">
+                <p class="text-sm font-medium text-lobster-pink-700">Veuillez corriger les erreurs ci-dessus.</p>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if eleve and not moyennes.semestres %}
+            <!-- Élève trouvé mais aucune note -->
+            <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-8 text-center">
+                <div class="mx-auto w-14 h-14 rounded-2xl bg-saffron-50 flex items-center justify-center mb-3">
+                    <svg class="w-7 h-7 text-saffron-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h3 class="font-semibold text-blue-bell-900 mb-1">Bienvenue {{ eleve.prenom }} {{ eleve.nom }}</h3>
+                <p class="text-sm text-blue-bell-600">Aucune note validée n'est disponible pour le moment. Revenez plus tard.</p>
+            </div>
+            {% endif %}
+
+            {% if eleve and moyennes.semestres %}
+            <!-- Résultats de l'élève -->
+            <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-5 border-b border-blue-bell-100 bg-gradient-to-r from-jungle-green-50 to-blue-bell-50 flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-full bg-jungle-green-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                            {{ eleve.prenom|slice:":1"|upper }}{{ eleve.nom|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-blue-bell-900">{{ eleve.prenom }} {{ eleve.nom }}</h2>
+                            <p class="text-xs text-blue-bell-600">{{ classe.nom }} — {{ classe.annee_scolaire.libelle }}</p>
+                        </div>
+                    </div>
+                    {% if moyennes.moy_annuelle %}
+                    <div class="text-center">
+                        <div class="text-2xl font-bold {% if moyennes.moy_annuelle >= 10 %}text-jungle-green-600{% else %}text-lobster-pink-600{% endif %}">{{ moyennes.moy_annuelle }}</div>
+                        <div class="text-xs text-blue-bell-600">Moyenne annuelle</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="divide-y divide-blue-bell-50">
+                    {% for sem in moyennes.semestres %}
+                    <div class="p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-blue-bell-900">{{ sem.semestre.get_libelle_display }}</h3>
+                            {% if sem.moyenne %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold {% if sem.moyenne >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">
+                                {{ sem.moyenne }}
+                            </span>
+                            {% else %}
+                            <span class="text-xs text-blue-bell-400">Pas encore de moyenne</span>
+                            {% endif %}
+                        </div>
+
+                        {% if sem.lignes %}
+                        <div class="overflow-x-auto -mx-5 px-5">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-left text-xs text-blue-bell-600 uppercase tracking-wide border-b border-blue-bell-100">
+                                        <th class="py-2 pr-4 font-semibold">Matière</th>
+                                        <th class="py-2 pr-4 font-semibold text-center">Coef.</th>
+                                        <th class="py-2 pr-4 font-semibold text-center">Moy. interros</th>
+                                        <th class="py-2 pr-4 font-semibold text-center">Moy. matière</th>
+                                        <th class="py-2 font-semibold text-center">Moy. coef.</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-blue-bell-50">
+                                    {% for ligne in sem.lignes %}
+                                    <tr>
+                                        <td class="py-2.5 pr-4 font-medium text-blue-bell-900">{{ ligne.matiere }}</td>
+                                        <td class="py-2.5 pr-4 text-center text-blue-bell-600">{{ ligne.coefficient }}</td>
+                                        <td class="py-2.5 pr-4 text-center text-blue-bell-600">{{ ligne.moy_i|default:"—" }}</td>
+                                        <td class="py-2.5 pr-4 text-center font-medium text-blue-bell-800">{{ ligne.moy_m }}</td>
+                                        <td class="py-2.5 text-center font-bold {% if ligne.moy_mc >= 10 %}text-jungle-green-600{% else %}text-lobster-pink-600{% endif %}">{{ ligne.moy_mc }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-sm text-blue-bell-500">Aucune note validée pour ce semestre.</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if eleve %}
+            <div class="text-center">
+                <a href="{% url 'student_access:consulter' classe.lien_public_uid %}" class="inline-flex items-center gap-2 text-sm font-medium text-blue-bell-600 hover:text-blue-bell-800 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    Consulter un autre élève
+                </a>
+            </div>
+            {% endif %}
+        </main>
+
+        <footer class="px-4 py-4 border-t border-blue-bell-100">
+            <p class="text-xs text-center text-blue-bell-600">Academia &copy; {% now "Y" %} — Consultation des notes</p>
+        </footer>
+    </div>
+</body>
+</html>
