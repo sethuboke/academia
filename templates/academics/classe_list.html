@@ -19,9 +19,27 @@
     </div>
 
     {% if classes %}
-    <!-- Grille de classes -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for classe in classes %}
+    <!-- Grille de classes, regroupées par année scolaire (courante d'abord) -->
+    {% regroup classes by annee_scolaire as groupes_annees %}
+    <div class="space-y-8">
+        {% for groupe in groupes_annees %}
+        <section>
+            <div class="flex items-center gap-3 mb-3">
+                <h2 class="text-lg font-semibold text-blue-bell-900">{{ groupe.grouper.libelle }}</h2>
+                {% if groupe.grouper.est_courante %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-jungle-green-50 text-jungle-green-700 text-xs font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-jungle-green-500"></span>
+                    Année en cours
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-bell-50 text-blue-bell-600 text-xs font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-bell-400"></span>
+                    Année passée
+                </span>
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for classe in groupe.list %}
         <a href="{% url 'academics:classe_detail' classe.pk %}" class="group relative bg-white rounded-2xl border border-blue-bell-100 shadow-sm hover:shadow-md hover:border-blue-bell-300 transition overflow-hidden">
             <!-- Bandeau coloré top -->
             <div class="h-1.5 bg-gradient-to-r from-blue-bell-500 via-deep-lilac-500 to-jungle-green-500"></div>
@@ -50,6 +68,9 @@
                 </div>
             </div>
         </a>
+        {% endfor %}
+            </div>
+        </section>
         {% endfor %}
     </div>
     {% else %}

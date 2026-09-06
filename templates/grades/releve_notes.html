@@ -29,6 +29,11 @@
                 <span class="hidden sm:inline">Saisir devoir 2</span>
                 <span class="sm:hidden">Devoir 2</span>
             </a>
+            <a href="{% url 'grades:saisie_conduite' classe_matiere.classe.pk semestre.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-saffron-50 hover:bg-saffron-100 text-saffron-700 text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span class="hidden sm:inline">Saisir conduite</span>
+                <span class="sm:hidden">Conduite</span>
+            </a>
         </div>
     </div>
 
@@ -88,7 +93,7 @@
                         {{ ligne.eleve.prenom|slice:":1"|upper }}{{ ligne.eleve.nom|slice:":1"|upper }}
                     </div>
                     <div class="min-w-0">
-                        <div class="font-medium text-blue-bell-900 truncate">{{ ligne.eleve.prenom }} {{ ligne.eleve.nom }}</div>
+                        <a href="{% url 'grades:bilan_eleve' ligne.eleve.pk %}" class="font-medium text-blue-bell-900 truncate hover:text-blue-bell-600 hover:underline transition" title="Voir le bilan de l'élève">{{ ligne.eleve.nom }} {{ ligne.eleve.prenom }}</a>
                         <div class="text-xs text-blue-bell-600 md:hidden">Interros : {{ ligne.interros|length }} · Devoirs : {{ ligne.devoirs|length }}</div>
                     </div>
                 </div>
@@ -128,10 +133,10 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    {% if ligne.interros or ligne.devoirs %}
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {% if ligne.interros.all|length and ligne.devoirs.all|length %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-saffron-50 text-saffron-700{% endif %}">
-                        <span class="w-1.5 h-1.5 rounded-full {% if ligne.interros.all|length and ligne.devoirs.all|length %}bg-jungle-green-500{% else %}bg-saffron-500{% endif %}"></span>
-                        {% if ligne.interros.all|length and ligne.devoirs.all|length %}Complet{% else %}Partiel{% endif %}
+                    {% if ligne.a_des_notes %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {% if ligne.complet %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-saffron-50 text-saffron-700{% endif %}">
+                        <span class="w-1.5 h-1.5 rounded-full {% if ligne.complet %}bg-jungle-green-500{% else %}bg-saffron-500{% endif %}"></span>
+                        {% if ligne.complet %}Complet{% else %}Partiel{% endif %}
                     </span>
                     {% else %}
                     <span class="text-xs text-blue-bell-400">Aucune note</span>

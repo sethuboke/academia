@@ -104,6 +104,19 @@ class ClasseListView(LoginRequiredMixin, ListView):
     template_name = "academics/classe_list.html"
     context_object_name = "classes"
 
+    def get_queryset(self):
+        """
+        Classes regroupées par année scolaire : l'année courante d'abord,
+        puis les années passées de la plus récente à la plus ancienne ;
+        dans chaque groupe, classes triées par nom.
+        Cet ordre permet le regroupement par année directement dans le
+        template ({% regroup %}).
+        """
+        return (
+            Classe.objects.select_related("annee_scolaire")
+            .order_by("-annee_scolaire__est_courante", "-annee_scolaire__libelle", "nom")
+        )
+
 
 class ClasseCreateView(LoginRequiredMixin, CreateView):
     model = Classe
@@ -136,7 +149,11 @@ class ClasseDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["eleves"] = self.object.eleves.all()
+        eleves = self.object.eleves.all()
+        ctx["eleves"] = eleves
+        # Effectifs par genre affichés avant l'effectif total sur la fiche classe.
+        ctx["nb_filles"] = eleves.filter(genre=Eleve.Genre.FEMININ).count()
+        ctx["nb_garcons"] = eleves.filter(genre=Eleve.Genre.MASCULIN).count()
         ctx["classe_matieres"] = self.object.classe_matieres.select_related("matiere")
         ctx["semestres"] = self.object.annee_scolaire.semestres.all()
         return ctx
@@ -168,6 +185,11 @@ class EleveUpdateView(LoginRequiredMixin, UpdateView):
     model = Eleve
     form_class = EleveForm
     template_name = "academics/eleve_form.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["classe"] = self.object.classe
+        return ctx
 
     def get_success_url(self):
         return reverse("academics:classe_detail", args=[self.object.classe_id])

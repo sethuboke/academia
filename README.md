@@ -23,6 +23,7 @@ Application web de gestion scolaire développée avec **Django 6** : suivi des c
 - Intégrité renforcée au niveau modèle : cohérence élève ↔ classe ↔ semestre ↔ année scolaire, bornes de notes 0–20
 - Workflow de validation : une note saisie reste invisible pour l'élève jusqu'à sa **validation** explicite par l'enseignant (horodatage automatique)
 - **Relevé de notes** par matière/semestre avec moyenne calculée en temps réel
+- **Bilan semestriel** par classe (moyennes coefficiées par matière, total, moyenne et rang de chaque élève) et **page Statistique** dédiée : tableaux des apprenants par **ordre de mérite**, téléchargeables au format **PDF**
 - Moteur de calcul **pur et testable unitairement** (`services.py`), découplé de l'ORM (`aggregations.py`) :
 
 | Moyenne | Formule | Remarques |
@@ -30,7 +31,7 @@ Application web de gestion scolaire développée avec **Django 6** : suivi des c
 | `Moy_I` | (I₁ + … + Iₙ) ÷ n | 1 ≤ n ≤ 4 interrogations |
 | `Moy_M` | (Moy_I + D₁ + D₂) ÷ 3 | **moyenne partielle** si des éléments manquent |
 | `Moy_Mc` | Moy_M × Coefficient | coefficient défini par classe/matière |
-| `Moy_Semestre` | Σ(Moy_Mc) ÷ Σ(coefficients) | matières sans note exclues du calcul |
+| `Moy_Semestre` | Σ(Moy_Mc) ÷ Σ(coefficients) | matières sans note exclues du calcul ; inclut la **conduite** (coef 1, note directe sans interro ni devoir) |
 | `Moy_Annuelle` | (Moy_S1 + 2 × Moy_S2) ÷ 3 | None si un semestre n'est pas calculable |
 
 > Toutes les moyennes sont **tronquées à 2 décimales** (13.336 → 13.33, jamais arrondies).
@@ -42,7 +43,7 @@ Application web de gestion scolaire développée avec **Django 6** : suivi des c
 ### 👨‍🎓 Consultation élève (`student_access`)
 - Page publique accessible via le **lien UUID de la classe** : `/eleve/<uuid>/`
 - L'élève s'identifie simplement par **nom + prénom**
-- Seules les **notes validées** sont affichées, avec moyennes par matière, moyennes de semestre et moyenne annuelle
+- Seules les **notes validées** sont affichées, avec moyennes par matière, une ligne **Total** (Σ coefficients et Σ moyennes coefficientées), puis **moyenne de semestre et rang** en fin de tableau (idem pour chaque semestre et pour le **bilan annuel** en bloc final)
 
 ### 📊 Tableau de bord (`dashboard`)
 - Vue d'ensemble protégée par authentification : effectifs, matières, notes, absences, dernières classes

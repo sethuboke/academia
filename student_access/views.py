@@ -1,9 +1,12 @@
+from decimal import Decimal
+
 from django import forms
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 from academics.models import Classe, Eleve
 from grades import aggregations
+from grades.models import Conduite
 
 
 class IdentificationEleveForm(forms.Form):
@@ -53,7 +56,8 @@ class ConsultationEleveView(View):
         })
 
     def _build_moyennes(self, eleve):
-        """Calcule les moyennes par matière et les moyennes de semestre/annualle."""
+        """Calcule les moyennes par matière, les moyennes de semestre/annuelle
+        et le rang de l'élève dans sa classe (semestriel et annuel)."""
         semestres = list(eleve.classe.annee_scolaire.semestres.all())
         resultats = []
 
@@ -72,16 +76,59 @@ class ConsultationEleveView(View):
                         "moy_mc": moy_mc,
                     })
             moy_semestre = aggregations.moy_semestre_eleve(eleve, semestre)
+            # Conduite validée : affichée comme une ligne à part entière
+            # du tableau (coefficient 1, pas d'interro ni devoir).
+            conduite = eleve.conduites.filter(semestre=semestre, valide=True).first()
+            # Rang semestriel : calculé pour toute la classe (notes
+            # validées uniquement), ex æquo compris. None si l'élève
+            # n'a aucune moyenne validée ce semestre (donc pas classé).
+            rangs = aggregations.rangs_semestriels_classe(eleve.classe, semestre)
+            rang = None
+            if eleve.pk in rangs:
+                rang = {"rang": rangs[eleve.pk], "total": len(rangs)}
             resultats.append({
                 "semestre": semestre,
                 "lignes": lignes_matieres,
                 "moyenne": moy_semestre,
+                "conduite": conduite.note if conduite else None,
+                "rang": rang,
+                # Totaux pour la ligne « Total » du tableau : somme des
+                # coefficients et somme des moyennes coefficientées des
+                # lignes affichées (+ conduite, coefficient 1, si validée).
+                "total_coefficients": (
+                    sum(
+                        (ligne["coefficient"] for ligne in lignes_matieres),
+                        start=0,
+                    )
+                    + (Conduite.COEFFICIENT if conduite is not None else 0)
+                ),
+                "total_moy_mc": (
+                    sum(
+                        (
+                            ligne["moy_mc"]
+                            for ligne in lignes_matieres
+                            if ligne["moy_mc"] is not None
+                        ),
+                        Decimal(0),
+                    )
+                    + (conduite.note if conduite is not None else Decimal(0))
+                ),
             })
 
-        # Moyenne annuelle
+        # Moyenne annuelle + rang annuel
+        rang_annuel = None
         if len(semestres) >= 2:
             moy_annuelle = aggregations.moy_annuelle_eleve(eleve, semestres[0], semestres[1])
+            rangs_annuels = aggregations.rangs_annuels_classe(
+                eleve.classe, semestres[0], semestres[1]
+            )
+            if eleve.pk in rangs_annuels:
+                rang_annuel = {"rang": rangs_annuels[eleve.pk], "total": len(rangs_annuels)}
         else:
             moy_annuelle = None
 
-        return {"semestres": resultats, "moy_annuelle": moy_annuelle}
+        return {
+            "semestres": resultats,
+            "moy_annuelle": moy_annuelle,
+            "rang_annuel": rang_annuel,
+        }

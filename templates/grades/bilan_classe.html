@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Bilan semestriel — {{ classe.nom }} — Academia{% endblock %}
+{% block page_title %}Bilan semestriel{% endblock %}
+{% block page_subtitle %}{{ classe.nom }} — {{ classe.annee_scolaire.libelle }}{% endblock %}
+{% block mobile_page_title %}Bilan semestriel{% endblock %}
+{% block mobile_page_subtitle %}{{ classe.nom }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Barre d'actions -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <a href="{% url 'academics:classe_detail' classe.pk %}" class="inline-flex items-center gap-2 text-sm font-medium text-blue-bell-600 hover:text-blue-bell-800 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Retour à la classe
+        </a>
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="{% url 'grades:statistique_classe' classe.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-deep-lilac-500 hover:bg-deep-lilac-600 text-white text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="hidden sm:inline">Statistique</span>
+            </a>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-deep-lilac-50 text-deep-lilac-700 text-xs font-medium">
+                Les résultats des filles sont affichés en gras
+            </span>
+        </div>
+    </div>
+
+    {% if not classe_matieres %}
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-8 text-center">
+        <p class="text-sm text-blue-bell-600">Aucune matière affectée à cette classe : le bilan ne peut pas être établi.</p>
+    </div>
+    {% endif %}
+
+    {% for section in sections %}
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-blue-bell-100 flex items-center justify-between gap-3 flex-wrap">
+            <h3 class="font-semibold text-blue-bell-900">Bilan du {{ section.semestre.get_libelle_display }} — {{ section.semestre.annee_scolaire.libelle }}</h3>
+            <span class="text-xs text-blue-bell-600">Toutes les notes (validées et non validées) sont prises en compte</span>
+        </div>
+
+        {% if section.lignes %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm whitespace-nowrap">
+                <thead>
+                    <tr class="text-left text-xs text-blue-bell-700 uppercase tracking-wide border-b border-blue-bell-100 bg-blue-bell-50/50">
+                        <th class="py-3 pr-6 pl-5 font-semibold">Nom &amp; Prénom</th>
+                        {% for cm in classe_matieres %}
+                        <th class="py-3 px-3 font-semibold text-center" title="Coefficient {{ cm.coefficient }}">{{ cm.matiere.nom }}</th>
+                        {% endfor %}
+                        <th class="py-3 px-3 font-semibold text-center">Total</th>
+                        <th class="py-3 px-3 font-semibold text-center">Moyenne semestrielle</th>
+                        <th class="py-3 pl-6 pr-5 font-semibold text-center">Rang</th>
+                        {% if section.afficher_annuel %}
+                        <th class="py-3 px-3 font-semibold text-center">Moyenne annuelle</th>
+                        <th class="py-3 pl-6 pr-5 font-semibold text-center">Rang annuel</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-blue-bell-50">
+                    {% for ligne in section.lignes %}
+                    <tr class="{% if ligne.est_fille %}font-bold bg-deep-lilac-50/30{% endif %}">
+                        <td class="py-3 pr-6 pl-5 text-blue-bell-900">{{ ligne.eleve.nom }} {{ ligne.eleve.prenom }}</td>
+                        {% for cellule in ligne.cellules %}
+                        <td class="py-3 px-3 text-center">
+                            {% if cellule != None %}<span class="{% if cellule >= 10 %}text-jungle-green-700{% else %}text-lobster-pink-700{% endif %}">{{ cellule }}</span>
+                            {% else %}<span class="font-normal text-blue-bell-400">—</span>{% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="py-3 px-3 text-center">
+                            {% if ligne.total != None %}{{ ligne.total }}{% else %}<span class="font-normal text-blue-bell-400">—</span>{% endif %}
+                        </td>
+                        <td class="py-3 px-3 text-center">
+                            {% if ligne.moyenne != None %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg font-bold {% if ligne.moyenne >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">{{ ligne.moyenne }}</span>
+                            {% else %}<span class="font-normal text-blue-bell-400">—</span>{% endif %}
+                        </td>
+                        <td class="py-3 pl-6 pr-5 text-center">
+                            {% if ligne.rang %}<span class="font-bold text-deep-lilac-700">{{ ligne.rang.rang }}</span><span class="text-xs font-normal text-blue-bell-400">/{{ ligne.rang.total }}</span>
+                            {% else %}<span class="font-normal text-blue-bell-400">—</span>{% endif %}
+                        </td>
+                        {% if section.afficher_annuel %}
+                        <td class="py-3 px-3 text-center">
+                            {% if ligne.moy_annuelle != None %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg font-bold {% if ligne.moy_annuelle >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">{{ ligne.moy_annuelle }}</span>
+                            {% else %}<span class="font-normal text-blue-bell-400">—</span>{% endif %}
+                        </td>
+                        <td class="py-3 pl-6 pr-5 text-center">
+                            {% if ligne.rang_annuel %}<span class="font-bold text-deep-lilac-700">{{ ligne.rang_annuel.rang }}</span><span class="text-xs font-normal text-blue-bell-400">/{{ ligne.rang_annuel.total }}</span>
+                            {% else %}<span class="font-normal text-blue-bell-400">—</span>{% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-5 py-3 border-t border-blue-bell-100 bg-blue-bell-50/40">
+            <p class="text-xs text-blue-bell-600">
+                Total = somme des moyennes coefficiées des matières · Moyenne = Total ÷ Σ coefficients (la conduite, coefficient 1, est incluse dans la moyenne lorsqu'elle est saisie) · Rang sur les élèves classés.
+                {% if section.afficher_annuel %} Moyenne annuelle = (Moy_S1 + 2 × Moy_S2) ÷ 3.{% endif %}
+            </p>
+        </div>
+        {% else %}
+        <div class="p-8 text-center">
+            <p class="text-sm text-blue-bell-600">Aucun élève inscrit dans cette classe.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-8 text-center">
+        <p class="text-sm text-blue-bell-600">Aucun semestre défini pour l'année scolaire {{ classe.annee_scolaire.libelle }}.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -105,9 +105,21 @@ class ClasseMatiere(models.Model):
 
 
 class Eleve(models.Model):
+    class Statut(models.TextChoices):
+        NOUVEAU = "N", "Nouveau"
+        REDOUBLANT = "R", "Redoublant"
+
+    class Genre(models.TextChoices):
+        MASCULIN = "M", "Masculin"
+        FEMININ = "F", "Féminin"
+
     classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name="eleves")
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
+    # Statut de l'élève à son enregistrement : nouveau ou redoublant (obligatoire).
+    statut = models.CharField(max_length=1, choices=Statut.choices)
+    # Genre de l'élève : M ou F (obligatoire).
+    genre = models.CharField(max_length=1, choices=Genre.choices)
 
     class Meta:
         constraints = [

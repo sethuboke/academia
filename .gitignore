@@ -14,6 +14,18 @@ db.sqlite3-journal
 media/
 staticfiles/
 
+# Scripts de vérification / artefacts locaux
+_check_*.py
+_test_*.py
+nul
+check_result.txt
+test_output.txt
+test_err.log
+test_run.log
+migrate_run.log
+verify.log
+.venv_install.log
+
 # IDE / OS
 .vscode/
 .idea/

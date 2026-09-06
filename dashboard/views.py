@@ -19,6 +19,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             "annee_courante": annee_courante,
             "total_classes": classes.count(),
             "total_eleves": Eleve.objects.count(),
+            # Effectifs par genre affichés avant l'effectif total sur le tableau de bord.
+            "total_filles": Eleve.objects.filter(genre=Eleve.Genre.FEMININ).count(),
+            "total_garcons": Eleve.objects.filter(genre=Eleve.Genre.MASCULIN).count(),
             "total_matieres": Matiere.objects.count(),
             "total_semestres": Semestre.objects.count(),
             "total_interrogations": Interrogation.objects.count(),

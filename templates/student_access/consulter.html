@@ -122,7 +122,7 @@
                 <div class="mx-auto w-14 h-14 rounded-2xl bg-saffron-50 flex items-center justify-center mb-3">
                     <svg class="w-7 h-7 text-saffron-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                <h3 class="font-semibold text-blue-bell-900 mb-1">Bienvenue {{ eleve.prenom }} {{ eleve.nom }}</h3>
+                <h3 class="font-semibold text-blue-bell-900 mb-1">Bienvenue {{ eleve.nom }} {{ eleve.prenom }}</h3>
                 <p class="text-sm text-blue-bell-600">Aucune note validée n'est disponible pour le moment. Revenez plus tard.</p>
             </div>
             {% endif %}
@@ -136,16 +136,10 @@
                             {{ eleve.prenom|slice:":1"|upper }}{{ eleve.nom|slice:":1"|upper }}
                         </div>
                         <div>
-                            <h2 class="font-bold text-blue-bell-900">{{ eleve.prenom }} {{ eleve.nom }}</h2>
+                            <h2 class="font-bold text-blue-bell-900">{{ eleve.nom }} {{ eleve.prenom }}</h2>
                             <p class="text-xs text-blue-bell-600">{{ classe.nom }} — {{ classe.annee_scolaire.libelle }}</p>
                         </div>
                     </div>
-                    {% if moyennes.moy_annuelle %}
-                    <div class="text-center">
-                        <div class="text-2xl font-bold {% if moyennes.moy_annuelle >= 10 %}text-jungle-green-600{% else %}text-lobster-pink-600{% endif %}">{{ moyennes.moy_annuelle }}</div>
-                        <div class="text-xs text-blue-bell-600">Moyenne annuelle</div>
-                    </div>
-                    {% endif %}
                 </div>
 
                 <div class="divide-y divide-blue-bell-50">
@@ -153,13 +147,6 @@
                     <div class="p-5">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-semibold text-blue-bell-900">{{ sem.semestre.get_libelle_display }}</h3>
-                            {% if sem.moyenne %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold {% if sem.moyenne >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">
-                                {{ sem.moyenne }}
-                            </span>
-                            {% else %}
-                            <span class="text-xs text-blue-bell-400">Pas encore de moyenne</span>
-                            {% endif %}
                         </div>
 
                         {% if sem.lignes %}
@@ -184,9 +171,48 @@
                                         <td class="py-2.5 text-center font-bold {% if ligne.moy_mc >= 10 %}text-jungle-green-600{% else %}text-lobster-pink-600{% endif %}">{{ ligne.moy_mc }}</td>
                                     </tr>
                                     {% endfor %}
+                                    {% if sem.conduite %}
+                                    <tr>
+                                        <td class="py-2.5 pr-4 font-medium text-blue-bell-900">Conduite</td>
+                                        <td class="py-2.5 pr-4 text-center text-blue-bell-600">1</td>
+                                        <td class="py-2.5 pr-4 text-center text-blue-bell-400">—</td>
+                                        <td class="py-2.5 pr-4 text-center text-blue-bell-400">—</td>
+                                        <td class="py-2.5 text-center font-bold {% if sem.conduite >= 10 %}text-jungle-green-600{% else %}text-lobster-pink-600{% endif %}">{{ sem.conduite }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <!-- Ligne Total : somme des coefficients et des moyennes coefficientées -->
+                                    <tr class="border-t-2 border-blue-bell-200 bg-blue-bell-50/60">
+                                        <td class="py-2.5 pr-4 font-bold text-blue-bell-900">Total</td>
+                                        <td class="py-2.5 pr-4 text-center font-bold text-blue-bell-700">{{ sem.total_coefficients }}</td>
+                                        <td class="py-2.5 pr-4 text-center"></td>
+                                        <td class="py-2.5 pr-4 text-center"></td>
+                                        <td class="py-2.5 text-center font-bold text-blue-bell-700">{{ sem.total_moy_mc }}</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
+
+                        {% if sem.moyenne %}
+                        <!-- Moyenne semestrielle et rang, en fin de tableau -->
+                        <div class="mt-4 flex items-center justify-between gap-3 flex-wrap rounded-xl border border-blue-bell-100 bg-blue-bell-50/70 px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold uppercase tracking-wide text-blue-bell-600">Moyenne semestrielle</span>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold {% if sem.moyenne >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">
+                                    {{ sem.moyenne }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold uppercase tracking-wide text-blue-bell-600">Rang</span>
+                                {% if sem.rang %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-deep-lilac-50 text-deep-lilac-700 text-sm font-bold">
+                                    {{ sem.rang.rang }}<sup>e</sup>/{{ sem.rang.total }}
+                                </span>
+                                {% else %}
+                                <span class="text-sm text-blue-bell-400">Non classé</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                         {% else %}
                         <p class="text-sm text-blue-bell-500">Aucune note validée pour ce semestre.</p>
                         {% endif %}
@@ -194,6 +220,37 @@
                     {% endfor %}
                 </div>
             </div>
+
+            {% if moyennes.moy_annuelle or moyennes.rang_annuel %}
+            <!-- Bilan annuel : moyenne annuelle et rang annuel -->
+            <div class="bg-white rounded-2xl border-2 border-deep-lilac-100 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-blue-bell-100">
+                    <h3 class="font-semibold text-blue-bell-900">Bilan annuel — {{ classe.annee_scolaire.libelle }}</h3>
+                </div>
+                <div class="flex items-center justify-between gap-3 flex-wrap px-6 py-5 bg-blue-bell-50/70">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-blue-bell-600">Moyenne annuelle</span>
+                        {% if moyennes.moy_annuelle %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold {% if moyennes.moy_annuelle >= 10 %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-lobster-pink-50 text-lobster-pink-700{% endif %}">
+                            {{ moyennes.moy_annuelle }}
+                        </span>
+                        {% else %}
+                        <span class="text-sm text-blue-bell-400">—</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-blue-bell-600">Rang</span>
+                        {% if moyennes.rang_annuel %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-deep-lilac-50 text-deep-lilac-700 text-sm font-bold">
+                            {{ moyennes.rang_annuel.rang }}<sup>e</sup>&nbsp;/&nbsp;{{ moyennes.rang_annuel.total }}
+                        </span>
+                        {% else %}
+                        <span class="text-sm text-blue-bell-400">Non classé</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             {% endif %}
 
             {% if eleve %}

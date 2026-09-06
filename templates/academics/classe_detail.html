@@ -15,7 +15,15 @@
             Retour aux classes
         </a>
         <div class="flex items-center gap-2">
-            <a href="{% url 'academics:classe_update' classe.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-sm font-medium transition">
+            <a href="{% url 'grades:bilan_classe' classe.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-deep-lilac-500 hover:bg-deep-lilac-600 text-white text-sm font-medium transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m4 10V11m4 6V3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="hidden sm:inline">Bilan semestriel</span>
+        </a>
+        <a href="{% url 'grades:statistique_classe' classe.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-sm font-medium transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span class="hidden sm:inline">Statistique</span>
+        </a>
+        <a href="{% url 'academics:classe_update' classe.pk %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-sm font-medium transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 <span class="hidden sm:inline">Modifier</span>
             </a>
@@ -29,6 +37,11 @@
     <!-- Cartes statistiques rapides -->
     <div class="grid grid-cols-3 gap-3 md:gap-4">
         <div class="bg-white rounded-2xl border border-blue-bell-100 p-4 text-center">
+            <div class="text-xs md:text-sm text-blue-bell-600 mb-1">
+                <span class="font-semibold text-deep-lilac-600">{{ nb_filles }} fille{{ nb_filles|pluralize }}</span>
+                <span class="mx-1">·</span>
+                <span class="font-semibold text-jungle-green-600">{{ nb_garcons }} garçon{{ nb_garcons|pluralize }}</span>
+            </div>
             <div class="text-2xl md:text-3xl font-bold text-blue-bell-600">{{ eleves|length }}</div>
             <div class="text-xs md:text-sm text-blue-bell-600 mt-1">Élèves</div>
         </div>
@@ -86,10 +99,12 @@
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     {% if semestres %}
-                    <a href="{% url 'grades:releve_notes' cm.pk semestres.0.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-xs font-medium transition">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        Notes
-                    </a>
+                        {% for semestre in semestres %}
+                        <a href="{% url 'grades:releve_notes' cm.pk semestre.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-xs font-medium transition" title="Notes — {{ semestre.get_libelle_display }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            {{ semestre.libelle }}
+                        </a>
+                        {% endfor %}
                     {% endif %}
                 </div>
             </div>
@@ -118,17 +133,24 @@
         {% if eleves %}
         <div class="divide-y divide-blue-bell-50">
             {% for eleve in eleves %}
-            <div class="px-5 py-3.5 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 min-w-0">
+            <div class="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-blue-bell-50/40 transition group">
+                <a href="{% url 'grades:bilan_eleve' eleve.pk %}" class="flex items-center gap-3 min-w-0 group-hover:text-blue-bell-700" title="Voir le bilan de l'élève">
                     <div class="w-9 h-9 rounded-full bg-jungle-green-50 flex items-center justify-center text-jungle-green-600 font-bold text-sm shrink-0">
                         {{ eleve.nom|slice:":1"|upper }}{{ eleve.prenom|slice:":1"|upper }}
                     </div>
                     <div class="min-w-0">
-                        <div class="font-medium text-blue-bell-900 truncate">{{ eleve.nom }} {{ eleve.prenom }}</div>
-                        <div class="text-xs text-blue-bell-600">{{ eleve.absences.count }} absence{{ eleve.absences.count|pluralize:"s" }}</div>
+                        <div class="font-medium text-blue-bell-900 truncate group-hover:underline">{{ eleve.nom }} {{ eleve.prenom }}</div>
+                        <div class="text-xs text-blue-bell-600 flex items-center gap-1.5 flex-wrap">
+                            <span class="px-1.5 py-0.5 rounded-full bg-deep-lilac-50 text-deep-lilac-700 font-medium">{{ eleve.get_genre_display }}</span>
+                            <span class="px-1.5 py-0.5 rounded-full font-medium {% if eleve.statut == 'N' %}bg-jungle-green-50 text-jungle-green-700{% else %}bg-saffron-50 text-saffron-700{% endif %}">{{ eleve.get_statut_display }}</span>
+                            <span>{{ eleve.absences.count }} absence{{ eleve.absences.count|pluralize:"s" }}</span>
+                        </div>
                     </div>
-                </div>
+                </a>
                 <div class="flex items-center gap-2 shrink-0">
+                    <a href="{% url 'grades:bilan_eleve' eleve.pk %}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-deep-lilac-600 hover:bg-deep-lilac-50 transition" title="Bilan des résultats">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </a>
                     <a href="{% url 'academics:eleve_update' eleve.pk %}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-bell-600 hover:bg-blue-bell-50 transition" title="Modifier">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </a>

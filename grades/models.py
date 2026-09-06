@@ -56,6 +56,64 @@ class EvaluationBase(models.Model):
         super().save(*args, **kwargs)
 
 
+COEFFICIENT_CONDUITE = 1
+
+
+class Conduite(models.Model):
+    """
+    Note de conduite d'un élève pour un semestre donné.
+
+    Particularité (décision produit) : la conduite est considérée comme
+    une matière de coefficient 1 dans le calcul de la moyenne semestrielle,
+    mais elle n'a NI interrogation NI devoir : sa note joue donc
+    directement le rôle d'une moyenne déjà coefficiée (Moy_Mc).
+
+    Une seule conduite par (élève, semestre) ; une nouvelle saisie met
+    simplement à jour la note existante.
+    """
+
+    COEFFICIENT = 1
+
+    eleve = models.ForeignKey(Eleve, on_delete=models.CASCADE, related_name="conduites")
+    semestre = models.ForeignKey(Semestre, on_delete=models.CASCADE, related_name="conduites")
+    note = models.DecimalField(max_digits=4, decimal_places=2, validators=NOTE_VALIDATORS)
+
+    date_saisie = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    # Même workflow que les notes : invisible côté consultation élève
+    # tant qu'elle n'est pas validée.
+    valide = models.BooleanField(default=False)
+    date_validation = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["eleve", "semestre"], name="uniq_conduite_par_semestre"
+            ),
+        ]
+        ordering = ["eleve", "semestre"]
+
+    def clean(self):
+        # Le semestre doit appartenir à l'année scolaire de la classe de l'élève.
+        if self.eleve_id and self.semestre_id:
+            if self.eleve.classe.annee_scolaire_id != self.semestre.annee_scolaire_id:
+                raise ValidationError(
+                    "Le semestre ne correspond pas à l'année scolaire de la classe de l'élève."
+                )
+
+    def save(self, *args, **kwargs):
+        if self.valide and not self.date_validation:
+            from django.utils import timezone
+
+            self.date_validation = timezone.now()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Conduite {self.note}/20 — {self.eleve} — {self.semestre}"
+
+
 class Interrogation(EvaluationBase):
     """
     Une interrogation individuelle. Il peut y en avoir 1 à 4 par

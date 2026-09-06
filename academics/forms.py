@@ -49,10 +49,12 @@ class ClasseForm(forms.ModelForm):
 class EleveForm(forms.ModelForm):
     class Meta:
         model = Eleve
-        fields = ["nom", "prenom"]
+        fields = ["nom", "prenom", "statut", "genre"]
         widgets = {
             "nom": forms.TextInput(attrs={"class": FIELD_CLASSES, "placeholder": "Nom de famille"}),
             "prenom": forms.TextInput(attrs={"class": FIELD_CLASSES, "placeholder": "Prénom"}),
+            "statut": forms.Select(attrs={"class": SELECT_CLASSES}),
+            "genre": forms.Select(attrs={"class": SELECT_CLASSES}),
         }
 
 

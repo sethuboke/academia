@@ -30,6 +30,11 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium text-blue-bell-600 uppercase tracking-wider">Élèves</p>
+                    <p class="text-xs md:text-sm text-blue-bell-600 mt-1">
+                        <span class="font-semibold text-deep-lilac-600">{{ total_filles }} fille{{ total_filles|pluralize }}</span>
+                        <span class="mx-1">·</span>
+                        <span class="font-semibold text-jungle-green-600">{{ total_garcons }} garçon{{ total_garcons|pluralize }}</span>
+                    </p>
                     <p class="text-3xl font-bold text-blue-bell-900 mt-1">{{ total_eleves }}</p>
                 </div>
                 <div class="w-11 h-11 rounded-xl bg-jungle-green-50 flex items-center justify-center text-jungle-green-500">
