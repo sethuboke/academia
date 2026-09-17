@@ -25,6 +25,7 @@ urlpatterns = [
     path('', include('dashboard.urls')),
     path('', include('academics.urls')),
     path('', include('attendance.urls')),
+    path('', include('sanctions.urls')),
     path('', include('grades.urls')),
     path('', include('student_access.urls')),
 ]

@@ -49,13 +49,62 @@ class ClasseForm(forms.ModelForm):
 class EleveForm(forms.ModelForm):
     class Meta:
         model = Eleve
-        fields = ["nom", "prenom", "statut", "genre"]
+        fields = ["nom", "prenom", "genre", "statut"]
         widgets = {
             "nom": forms.TextInput(attrs={"class": FIELD_CLASSES, "placeholder": "Nom de famille"}),
             "prenom": forms.TextInput(attrs={"class": FIELD_CLASSES, "placeholder": "Prénom"}),
-            "statut": forms.Select(attrs={"class": SELECT_CLASSES}),
             "genre": forms.Select(attrs={"class": SELECT_CLASSES}),
+            "statut": forms.Select(attrs={"class": SELECT_CLASSES}),
         }
+
+
+class EleveBulkRowForm(forms.Form):
+    """Ligne d'enregistrement groupé : un apprenant par ligne.
+
+    Le nom est stocké en MAJUSCULES et le prénom avec une majuscule
+    en début de chaque partie (gestion des espaces et des traits d'union).
+    """
+
+    nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={
+        "class": FIELD_CLASSES,
+        "placeholder": "Nom de famille",
+    }))
+    prenom = forms.CharField(max_length=100, label="Prénom(s)", widget=forms.TextInput(attrs={
+        "class": FIELD_CLASSES,
+        "placeholder": "Prénom(s)",
+    }))
+    genre = forms.ChoiceField(
+        choices=Eleve.Genre.choices,
+        label="Sexe",
+        initial=Eleve.Genre.MASCULIN,
+        widget=forms.Select(attrs={"class": SELECT_CLASSES}),
+    )
+    statut = forms.ChoiceField(
+        choices=Eleve.Statut.choices,
+        label="Statut",
+        initial=Eleve.Statut.NOUVEAU,
+        widget=forms.Select(attrs={"class": SELECT_CLASSES}),
+    )
+
+    def clean_nom(self):
+        return self.cleaned_data["nom"].strip().upper()
+
+    def clean_prenom(self):
+        prenom = self.cleaned_data["prenom"].strip()
+        return " ".join(
+            "-".join(partie.capitalize() for partie in segment.split("-"))
+            for segment in prenom.split()
+        )
+
+
+EleveBulkFormSet = forms.formset_factory(
+    EleveBulkRowForm,
+    extra=5,
+    min_num=1,
+    max_num=50,
+    validate_min=True,
+    validate_max=True,
+)
 
 
 class ClasseMatiereForm(forms.ModelForm):
