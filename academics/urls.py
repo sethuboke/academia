@@ -31,6 +31,11 @@ urlpatterns = [
     path("classes/<int:pk>/supprimer/", views.ClasseDeleteView.as_view(), name="classe_delete"),
 
     path("classes/<int:classe_pk>/eleves/ajouter/", views.EleveCreateView.as_view(), name="eleve_create"),
+    path(
+        "classes/<int:classe_pk>/eleves/ajouter-multiple/",
+        views.EleveBulkCreateView.as_view(),
+        name="eleve_bulk_create",
+    ),
     path("eleves/<int:pk>/modifier/", views.EleveUpdateView.as_view(), name="eleve_update"),
     path("eleves/<int:pk>/supprimer/", views.EleveDeleteView.as_view(), name="eleve_delete"),
 

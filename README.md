@@ -13,7 +13,8 @@ Application web de gestion scolaire développée avec **Django 6** : suivi des c
 - **Semestres** (S1 / S2) rattachés à une année scolaire (unicité garantie en base)
 - **Classes** par année scolaire, chacune dotée d'un **lien UUID public non devinable** pour la consultation élève
 - **Matières** et association classe ↔ matière (**ClasseMatiere**) avec **coefficient** (≥ 1)
-- **Élèves** rattachés à une classe (unicité nom + prénom par classe)
+- **Élèves** rattachés à une classe (unicité nom + prénom par classe), avec **genre** et **statut** (nouveau / redoublant)
+- **Enregistrement multiple** d'apprenants : saisir plusieurs élèves à la fois (nom, prénom, sexe, statut) sur une seule page, lignes dynamiques, doublons détectés ; le nom est automatiquement stocké en **majuscules** et le prénom avec une **majuscule initiale**
 - CRUD complet (list, detail, create, update, delete) pour chaque entité
 
 ### 📝 Notes (`grades`)
@@ -38,6 +39,11 @@ Application web de gestion scolaire développée avec **Django 6** : suivi des c
 
 ### 🗓️ Assiduité (`attendance`)
 - Suivi des **absences** et **retards** par élève, avec motif et date
+- Liste par classe + suppression
+
+### ⚖️ Sanctions (`sanctions`)
+- **Sanctionnement des apprenants indisciplinés** : date, motif de la sanction et sanction appliquée
+- Accès dédié depuis la fiche classe, juste après le bloc « Absences & retards »
 - Liste par classe + suppression
 
 ### 👨‍🎓 Consultation élève (`student_access`)
@@ -72,6 +78,7 @@ academia/
 │   ├── aggregations.py# Pont ORM -> moteur de calcul
 │   └── views.py       # Saisie, validation, relevé
 ├── attendance/        # Absences et retards
+├── sanctions/         # Sanctions & discipline des apprenants
 ├── student_access/    # Consultation publique des notes (lien UUID)
 ├── dashboard/         # Tableau de bord
 ├── audit/             # Journalisation (prévu)

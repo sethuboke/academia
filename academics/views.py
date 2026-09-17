@@ -1,10 +1,19 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from .forms import AnneeScolaireForm, ClasseForm, ClasseMatiereForm, EleveForm, MatiereForm, SemestreForm
+from .forms import (
+    AnneeScolaireForm,
+    ClasseForm,
+    ClasseMatiereForm,
+    EleveBulkFormSet,
+    EleveForm,
+    MatiereForm,
+    SemestreForm,
+)
 from .models import AnneeScolaire, Classe, ClasseMatiere, Eleve, Matiere, Semestre
 
 
@@ -201,6 +210,79 @@ class EleveDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse("academics:classe_detail", args=[self.object.classe_id])
+
+
+class EleveBulkCreateView(LoginRequiredMixin, View):
+    """Enregistrement groupé de plusieurs apprenants pour une classe."""
+    template_name = "academics/eleve_bulk_form.html"
+    prefix = "eleves"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.classe = get_object_or_404(Classe, pk=kwargs["classe_pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        # Une ligne pré-remplie permet de comprendre la structure du formulaire.
+        initial = [{"statut": Eleve.Statut.NOUVEAU, "genre": Eleve.Genre.MASCULIN}]
+        formset = EleveBulkFormSet(prefix=self.prefix, initial=initial)
+        return render(request, self.template_name, {
+            "classe": self.classe, "formset": formset,
+        })
+
+    def post(self, request, *args, **kwargs):
+        formset = EleveBulkFormSet(request.POST, prefix=self.prefix)
+
+        # Validation ligne par ligne : une ligne entièrement vide est simplement
+        # ignorée (l'utilisateur ne doit pas être bloqué par des lignes vides).
+        crees = 0
+        deja_existants = []
+        invalides = []
+        for form in formset:
+            nom_brut = form.data.get(form.add_prefix("nom"), "") or ""
+            prenom_brut = form.data.get(form.add_prefix("prenom"), "") or ""
+            if not nom_brut.strip() and not prenom_brut.strip():
+                continue  # ligne vide : rien à enregistrer
+            if not form.is_valid():
+                nom_affiche = nom_brut.strip() or prenom_brut.strip() or "Ligne"
+                invalides.append(nom_affiche)
+                continue
+            # Le formulaire a déjà normalisé la casse (nom en majuscules,
+            # prénom avec majuscule initiale).
+            nom = form.cleaned_data["nom"]
+            prenom = form.cleaned_data["prenom"]
+            # Unicité (classe, nom, prénom) : ne pas dupliquer un apprenant
+            # existant, même si l'ancienne saisie n'était pas normalisée.
+            if Eleve.objects.filter(
+                classe=self.classe, nom__iexact=nom, prenom__iexact=prenom
+            ).exists():
+                deja_existants.append(f"{nom} {prenom}")
+                continue
+            Eleve.objects.create(
+                classe=self.classe,
+                nom=nom,
+                prenom=prenom,
+                genre=form.cleaned_data["genre"],
+                statut=form.cleaned_data["statut"],
+            )
+            crees += 1
+
+        if invalides:
+            for nom_affiche in invalides:
+                messages.error(self.request, f"Ligne « {nom_affiche} » : champ(s) invalide(s).")
+            return render(request, self.template_name, {
+                "classe": self.classe, "formset": formset,
+            })
+
+        if crees:
+            messages.success(self.request, f"{crees} apprenant(s) enregistré(s) avec succès.")
+        if deja_existants:
+            messages.warning(
+                self.request,
+                "Déjà présents dans cette classe : " + ", ".join(deja_existants) + ".",
+            )
+        if crees == 0 and not deja_existants:
+            messages.error(self.request, "Aucune ligne renseignée à enregistrer.")
+        return redirect("academics:classe_detail", pk=self.classe.pk)
 
 
 class ClasseMatiereCreateView(LoginRequiredMixin, CreateView):

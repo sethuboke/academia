@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'audit',
     'dashboard',
     'grades', 'student_access',
+    'sanctions',
 ]
 
 MIDDLEWARE = [
