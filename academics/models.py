@@ -130,4 +130,4 @@ class Eleve(models.Model):
         ordering = ["nom", "prenom"]
 
     def __str__(self):
-        return f"{self.nom} {self.prenom} — {self.classe}"
+        return f"{self.nom} {self.prenom}"

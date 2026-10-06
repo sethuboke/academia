@@ -24,7 +24,7 @@ class SanctionModelTests(TestCase):
             sanction="Avertissement",
         )
         self.assertEqual(
-            str(sanction), "Avertissement — Kossi Abla — Seconde C (2025-2026) — 2026-01-15",
+            str(sanction), "Avertissement — Kossi Abla — 2026-01-15",
         )
         self.assertEqual(eleve.sanctions.count(), 1)
 
