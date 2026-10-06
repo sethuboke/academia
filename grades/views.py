@@ -8,18 +8,31 @@ from django.views import View
 from academics.models import Classe, ClasseMatiere, Eleve, Semestre
 
 from . import aggregations
-from .forms import NoteFormSet
+from .forms import (
+    DevoirGrilleFormSet,
+    InterrogationGrilleFormSet,
+    NoteFormSet,
+)
 from .models import Conduite, Devoir, Interrogation, MAX_INTERROS_PAR_PERIODE
 
 
-class _SaisieNotesBaseView(LoginRequiredMixin, View):
+class _SaisieGrilleBaseView(LoginRequiredMixin, View):
     """
-    Base commune pour la saisie groupée d'interrogations et de devoirs :
-    même écran (une ligne par élève), seul le modèle cible et les
-    champs supplémentaires (numéro du devoir) changent.
+    Base des deux grilles (interros I1-I4, devoirs D1-D2) : une ligne par
+    eleve, cases preremplies. Case remplie = creation, modifiee = mise a
+    jour, videe = suppression. Une note modifiee repasse non validee.
     """
     template_name = "grades/saisie_notes.html"
     type_note = None  # à définir dans les sous-classes, pour l'affichage
+    colonnes = ()
+    titre_grille = None
+
+    def get_contexte_grille(self):
+        return {
+            "colonnes": self.colonnes,
+            "titre_grille": self.titre_grille or self.type_note,
+            "est_grille_interros": self.colonnes and self.colonnes[0].startswith("I"),
+        }
 
     def get_classe_matiere_semestre(self, classe_matiere_pk, semestre_pk):
         classe_matiere = get_object_or_404(
@@ -28,61 +41,125 @@ class _SaisieNotesBaseView(LoginRequiredMixin, View):
         semestre = get_object_or_404(Semestre, pk=semestre_pk)
         return classe_matiere, semestre
 
-    def build_initial(self, classe_matiere):
-        return [
-            {"eleve_id": e.pk, "eleve_nom": str(e), "note": None}
-            for e in classe_matiere.classe.eleves.all()
-        ]
+    def appliquer_ligne(self, eleve_id, classe_matiere, semestre, valeurs):
+        raise NotImplementedError
 
-    def save_note(self, eleve_id, classe_matiere, semestre, note):
+    def get_formset_class(self):
+        raise NotImplementedError
+
+    @staticmethod
+    def _nom_eleve(eleve_id):
+        eleve = Eleve.objects.filter(pk=eleve_id).first()
+        return str(eleve) if eleve else f"Eleve #{eleve_id}"
+
+    def build_initial(self, classe_matiere, semestre):
         raise NotImplementedError
 
     def get(self, request, classe_matiere_pk, semestre_pk):
         classe_matiere, semestre = self.get_classe_matiere_semestre(classe_matiere_pk, semestre_pk)
-        formset = NoteFormSet(initial=self.build_initial(classe_matiere))
-        return render(request, self.template_name, {
+        formset = self.get_formset_class()(initial=self.build_initial(classe_matiere, semestre))
+        contexte = {
             "classe_matiere": classe_matiere, "semestre": semestre,
             "formset": formset, "type_note": self.type_note,
-        })
+        }
+        contexte.update(self.get_contexte_grille())
+        return render(request, self.template_name, contexte)
 
     def post(self, request, classe_matiere_pk, semestre_pk):
         classe_matiere, semestre = self.get_classe_matiere_semestre(classe_matiere_pk, semestre_pk)
-        formset = NoteFormSet(request.POST, initial=self.build_initial(classe_matiere))
+        formset = self.get_formset_class()(
+            request.POST, initial=self.build_initial(classe_matiere, semestre)
+        )
         if formset.is_valid():
             erreurs = []
             nb_enregistrees = 0
+            nb_supprimees = 0
             for form in formset:
-                note = form.cleaned_data.get("note")
                 eleve_id = form.cleaned_data.get("eleve_id")
-                if note is None or eleve_id is None:
-                    continue  # ligne laissée vide : rien à saisir pour cet élève
+                if eleve_id is None:
+                    continue
                 try:
-                    self.save_note(eleve_id, classe_matiere, semestre, note)
-                    nb_enregistrees += 1
-                except Exception as exc:  # ValidationError du modèle (ex: 5e interro)
-                    eleve = Eleve.objects.filter(pk=eleve_id).first()
-                    nom_eleve = str(eleve) if eleve else f"Élève #{eleve_id}"
-                    erreurs.append(f"{nom_eleve} : {exc}")
+                    crees, suppr = self.appliquer_ligne(
+                        eleve_id, classe_matiere, semestre, form.cleaned_data
+                    )
+                    nb_enregistrees += crees
+                    nb_supprimees += suppr
+                except Exception as exc:
+                    erreurs.append(f"{self._nom_eleve(eleve_id)} : {exc}")
             if nb_enregistrees:
-                messages.success(request, f"{nb_enregistrees} note(s) enregistrée(s).")
+                messages.success(request, f"{nb_enregistrees} note(s) enregistree(s).")
+            if nb_supprimees:
+                messages.success(request, f"{nb_supprimees} note(s) supprimee(s).")
             for erreur in erreurs:
                 messages.error(request, erreur)
             return redirect(
                 "grades:releve_notes", classe_matiere_pk=classe_matiere.pk, semestre_pk=semestre.pk
             )
-        return render(request, self.template_name, {
+        contexte = {
             "classe_matiere": classe_matiere, "semestre": semestre,
             "formset": formset, "type_note": self.type_note,
-        })
+        }
+        contexte.update(self.get_contexte_grille())
+        return render(request, self.template_name, contexte)
 
 
-class SaisieInterrogationView(_SaisieNotesBaseView):
-    type_note = "Interrogation"
+class SaisieInterrogationView(_SaisieGrilleBaseView):
+    """Grille I1-I4 : 5 colonnes (Nom & prenoms, I1, I2, I3, I4)."""
+    type_note = "Interrogations"
+    colonnes = ("I1", "I2", "I3", "I4")
+    titre_grille = "Saisir les interros"
 
-    def save_note(self, eleve_id, classe_matiere, semestre, note):
-        Interrogation.objects.create(
-            eleve_id=eleve_id, classe_matiere=classe_matiere, semestre=semestre, note=note,
+    def get_formset_class(self):
+        return InterrogationGrilleFormSet
+
+    def build_initial(self, classe_matiere, semestre):
+        lignes = []
+        for eleve in classe_matiere.classe.eleves.all():
+            notes = list(
+                Interrogation.objects.filter(
+                    eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+                ).order_by("date_saisie", "pk").values_list("note", flat=True)
+            )[:MAX_INTERROS_PAR_PERIODE]
+            initial = {"eleve_id": eleve.pk, "eleve_nom": str(eleve)}
+            for position in range(1, MAX_INTERROS_PAR_PERIODE + 1):
+                initial[f"note_{position}"] = (
+                    notes[position - 1] if position <= len(notes) else None
+                )
+            lignes.append(initial)
+        return lignes
+
+    def appliquer_ligne(self, eleve_id, classe_matiere, semestre, valeurs):
+        existantes = list(
+            Interrogation.objects.filter(
+                eleve_id=eleve_id, classe_matiere=classe_matiere, semestre=semestre
+            ).order_by("date_saisie", "pk")
         )
+        saisies = [valeurs.get(f"note_{p}") for p in range(1, MAX_INTERROS_PAR_PERIODE + 1)]
+        saisies = [n for n in saisies if n is not None]
+        nb_ok = 0
+        nb_suppr = 0
+        for position, interro in enumerate(existantes):
+            if position < len(saisies):
+                if interro.note != saisies[position]:
+                    interro.note = saisies[position]
+                    interro.valide = False
+                    interro.date_validation = None
+                    interro.save()
+                    nb_ok += 1
+            else:
+                interro.delete()
+                nb_suppr += 1
+        for note in saisies[len(existantes):]:
+            Interrogation.objects.create(
+                eleve_id=eleve_id, classe_matiere=classe_matiere,
+                semestre=semestre, note=note,
+            )
+            nb_ok += 1
+        return nb_ok, nb_suppr
+
+
+class _SaisieNotesBaseView(_SaisieGrilleBaseView):
+    """Alias conserve pour compatibilite (ancienne saisie)."""
 
 
 class SaisieConduiteView(LoginRequiredMixin, View):
@@ -185,19 +262,69 @@ class ValiderConduitesView(LoginRequiredMixin, View):
         return redirect("grades:saisie_conduite", classe_pk=classe.pk, semestre_pk=semestre.pk)
 
 
-class SaisieDevoirView(_SaisieNotesBaseView):
+class SaisieDevoirView(_SaisieGrilleBaseView):
+    """Grille D1-D2 : 3 colonnes (Nom & prenoms, D1, D2)."""
+    type_note = "Devoirs"
+    colonnes = ("D1", "D2")
+    titre_grille = "Saisir les devoirs"
+
     def dispatch(self, request, *args, **kwargs):
-        # On retire "numero" des kwargs pour qu'il ne soit pas transmis à
-        # get()/post() de la classe de base (qui ne l'accepte pas).
-        self.numero = kwargs.pop("numero")
-        self.type_note = f"Devoir {self.numero}"
+        # Compatibilite avec l'ancienne URL /devoir/<numero>/saisir/ :
+        # le numero est ignore, la grille saisit toujours D1 et D2.
+        kwargs.pop("numero", None)
         return super().dispatch(request, *args, **kwargs)
 
-    def save_note(self, eleve_id, classe_matiere, semestre, note):
-        Devoir.objects.update_or_create(
-            eleve_id=eleve_id, classe_matiere=classe_matiere, semestre=semestre,
-            numero=self.numero, defaults={"note": note},
-        )
+    def get_formset_class(self):
+        return DevoirGrilleFormSet
+
+    def build_initial(self, classe_matiere, semestre):
+        lignes = []
+        for eleve in classe_matiere.classe.eleves.all():
+            par_numero = dict(
+                Devoir.objects.filter(
+                    eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+                ).values_list("numero", "note")
+            )
+            lignes.append({
+                "eleve_id": eleve.pk,
+                "eleve_nom": str(eleve),
+                "devoir_1": par_numero.get(1),
+                "devoir_2": par_numero.get(2),
+            })
+        return lignes
+
+    def appliquer_ligne(self, eleve_id, classe_matiere, semestre, valeurs):
+        nb_ok = 0
+        nb_suppr = 0
+        for numero, champ in ((1, "devoir_1"), (2, "devoir_2")):
+            note = valeurs.get(champ)
+            existant = Devoir.objects.filter(
+                eleve_id=eleve_id, classe_matiere=classe_matiere,
+                semestre=semestre, numero=numero,
+            ).first()
+            if note is None:
+                if existant:
+                    existant.delete()
+                    nb_suppr += 1
+                continue
+            if existant:
+                if existant.note != note:
+                    existant.note = note
+                    existant.valide = False
+                    existant.date_validation = None
+                    existant.save()
+                    nb_ok += 1
+            else:
+                Devoir.objects.create(
+                    eleve_id=eleve_id, classe_matiere=classe_matiere,
+                    semestre=semestre, numero=numero, note=note,
+                )
+                nb_ok += 1
+        return nb_ok, nb_suppr
+
+
+# Alias pluriel : la grille devoirs s'appelle desormais « devoirs » (D1-D2).
+SaisieDevoirsView = SaisieDevoirView
 
 
 class ValiderNotesView(LoginRequiredMixin, View):
@@ -226,7 +353,11 @@ class ValiderNotesView(LoginRequiredMixin, View):
 
 
 class ReleveNotesView(LoginRequiredMixin, View):
-    """Vue d'ensemble des notes (validées ou non) et de la moyenne matière par élève."""
+    """
+    Releve d'une matiere : meme modele de tableau que le bilan eleve
+    (I1-I4, Moy. interros, D1-D2, Moy. matiere, Moy. coef.), transpose :
+    une ligne par eleve au lieu d'une ligne par matiere.
+    """
     template_name = "grades/releve_notes.html"
 
     def get(self, request, classe_matiere_pk, semestre_pk):
@@ -237,19 +368,45 @@ class ReleveNotesView(LoginRequiredMixin, View):
 
         lignes = []
         for eleve in classe_matiere.classe.eleves.all():
-            interros = Interrogation.objects.filter(
-                eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+            interros = list(
+                Interrogation.objects.filter(
+                    eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+                ).order_by("date_saisie", "pk")
             )
-            devoirs = Devoir.objects.filter(
-                eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+            devoirs = list(
+                Devoir.objects.filter(
+                    eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+                ).order_by("numero")
             )
-            moyenne = aggregations.moy_m_eleve_matiere_semestre(
-                eleve, classe_matiere, semestre, seulement_validees=False
-            )
-            nb_interros = interros.count()
-            nb_devoirs = devoirs.count()
+            # Cases du tableau : I1-I4 completees par des cases vides,
+            # D1-D2 par numero, chacune avec son statut de validation.
+            interros_cells = [
+                {"note": i.note, "valide": i.valide} for i in interros
+            ][:MAX_INTERROS_PAR_PERIODE]
+            interros_cells += [None] * (MAX_INTERROS_PAR_PERIODE - len(interros_cells))
+            devoirs_par_numero = {d.numero: d for d in devoirs}
+            devoirs_cells = []
+            for numero in (1, 2):
+                devoir = devoirs_par_numero.get(numero)
+                devoirs_cells.append(
+                    {"note": devoir.note, "valide": devoir.valide}
+                    if devoir else None
+                )
+            nb_interros = len(interros)
+            nb_devoirs = len(devoirs)
             lignes.append({
-                "eleve": eleve, "interros": interros, "devoirs": devoirs, "moyenne": moyenne,
+                "eleve": eleve,
+                "interros_cells": interros_cells,
+                "devoirs_cells": devoirs_cells,
+                "moy_i": aggregations.moy_i_eleve_matiere_semestre(
+                    eleve, classe_matiere, semestre, seulement_validees=False
+                ),
+                "moyenne": aggregations.moy_m_eleve_matiere_semestre(
+                    eleve, classe_matiere, semestre, seulement_validees=False
+                ),
+                "moy_mc": aggregations.moy_mc_eleve_matiere_semestre(
+                    eleve, classe_matiere, semestre, seulement_validees=False
+                ),
                 # Statut : "Complet" uniquement lorsque les 2 interrogations
                 # et les 2 devoirs sont saisis.
                 "complet": nb_interros >= 2 and nb_devoirs == 2,

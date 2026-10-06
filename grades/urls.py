@@ -11,6 +11,11 @@ urlpatterns = [
         name="saisie_interrogation",
     ),
     path(
+        "classe-matiere/<int:classe_matiere_pk>/semestre/<int:semestre_pk>/devoirs/saisir/",
+        views.SaisieDevoirView.as_view(),
+        name="saisie_devoirs",
+    ),
+    path(
         "classe-matiere/<int:classe_matiere_pk>/semestre/<int:semestre_pk>/devoir/<int:numero>/saisir/",
         views.SaisieDevoirView.as_view(),
         name="saisie_devoir",
