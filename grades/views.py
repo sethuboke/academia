@@ -129,12 +129,20 @@ class SaisieConduiteView(LoginRequiredMixin, View):
         if formset.is_valid():
             erreurs = []
             nb_enregistrees = 0
+            nb_supprimees = 0
             for form in formset:
                 note = form.cleaned_data.get("note")
                 eleve_id = form.cleaned_data.get("eleve_id")
-                if note is None or eleve_id is None:
-                    continue  # ligne laissée vide : pas de conduite à enregistrer
+                if eleve_id is None:
+                    continue
                 try:
+                    if note is None:
+                        # Champ laissé vide : suppression de la conduite
+                        # existante de l'élève (saisir = modifier = supprimer).
+                        nb_supprimees += Conduite.objects.filter(
+                            eleve_id=eleve_id, semestre=semestre
+                        ).delete()[0]
+                        continue
                     Conduite.objects.update_or_create(
                         eleve_id=eleve_id, semestre=semestre, defaults={"note": note},
                     )
@@ -145,6 +153,8 @@ class SaisieConduiteView(LoginRequiredMixin, View):
                     erreurs.append(f"{nom_eleve} : {exc}")
             if nb_enregistrees:
                 messages.success(request, f"{nb_enregistrees} conduite(s) enregistrée(s).")
+            if nb_supprimees:
+                messages.success(request, f"{nb_supprimees} conduite(s) supprimée(s).")
             for erreur in erreurs:
                 messages.error(request, erreur)
             return redirect(

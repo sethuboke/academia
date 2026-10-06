@@ -84,8 +84,9 @@
                 Ajouter
             </a>
         </div>
-        {% if classe_matieres %}
+        {% if classe_matieres or semestres %}
         <div class="divide-y divide-blue-bell-50">
+            {% if classe_matieres %}
             {% for cm in classe_matieres %}
             <div class="px-5 py-3.5 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
@@ -109,6 +110,28 @@
                 </div>
             </div>
             {% endfor %}
+            {% endif %}
+
+            <!-- Conduite : toujours la dernière ligne du tableau -->
+            <div class="px-5 py-3.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-lg bg-saffron-50 flex items-center justify-center text-saffron-600 font-bold text-sm shrink-0">CO</div>
+                    <div class="min-w-0">
+                        <div class="font-medium text-blue-bell-900 truncate">Conduite</div>
+                        <div class="text-xs text-blue-bell-600">Coefficient 1 — compte dans la moyenne semestrielle</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    {% if semestres %}
+                        {% for semestre in semestres %}
+                        <a href="{% url 'grades:saisie_conduite' classe.pk semestre.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-saffron-50 hover:bg-saffron-100 text-saffron-700 text-xs font-medium transition" title="Conduite — {{ semestre.get_libelle_display }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            {{ semestre.libelle }}
+                        </a>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% else %}
         <div class="p-8 text-center">

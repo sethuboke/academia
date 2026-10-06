@@ -172,6 +172,25 @@ class SaisieConduiteViewTests(ConduiteBaseTestCase):
         self.assertEqual(Conduite.objects.filter(eleve=self.eleve1).count(), 1)
         self.assertEqual(Conduite.objects.get(eleve=self.eleve1).note, Decimal("12"))
 
+    def test_post_vide_supprime_la_conduite_existante(self):
+        Conduite.objects.create(eleve=self.eleve1, semestre=self.semestre, note=14)
+        url = reverse("grades:saisie_conduite", args=[self.classe.pk, self.semestre.pk])
+        data = {
+            "form-TOTAL_FORMS": "2",
+            "form-INITIAL_FORMS": "2",
+            "form-MIN_NUM_FORMS": "0",
+            "form-MAX_NUM_FORMS": "1000",
+            "form-0-eleve_id": str(self.eleve1.pk),
+            "form-0-note": "",
+            "form-1-eleve_id": str(self.eleve2.pk),
+            "form-1-note": "",
+        }
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            Conduite.objects.filter(eleve=self.eleve1, semestre=self.semestre).count(), 0
+        )
+
     def test_acces_requiert_authentification(self):
         self.client.logout()
         resp = self.client.get(reverse("grades:saisie_conduite", args=[self.classe.pk, self.semestre.pk]))

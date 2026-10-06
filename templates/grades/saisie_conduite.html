@@ -63,70 +63,47 @@
             {% csrf_token %}
             {{ formset.management_form }}
 
-            <!-- En-têtes (desktop) -->
-            <div class="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-blue-bell-50/50 border-b border-blue-bell-100 text-xs font-semibold text-blue-bell-700 uppercase tracking-wide">
-                <div class="col-span-6">Élève</div>
-                <div class="col-span-3">Note / 20</div>
-                <div class="col-span-3">Statut</div>
-            </div>
-
-            <div class="divide-y divide-blue-bell-50">
-                {% for form in formset %}
-                <div class="px-5 py-3.5 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center">
-                    <!-- Élève -->
-                    <div class="md:col-span-6 flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-jungle-green-50 flex items-center justify-center text-jungle-green-600 font-bold text-sm shrink-0">
-                            {{ form.eleve_nom.value|slice:":1"|upper }}
-                        </div>
-                        <div class="min-w-0">
-                            <div class="font-medium text-blue-bell-900 truncate">{{ form.eleve_nom.value }}</div>
-                            <div class="text-xs text-blue-bell-600 md:hidden">Note / 20</div>
-                        </div>
-                    </div>
-
-                    {{ form.eleve_id }}
-                    {{ form.eleve_nom.as_hidden }}
-
-                    <!-- Note -->
-                    <div class="md:col-span-3">
-                        <div class="relative">
-                            {{ form.note }}
-                            {% if form.note.errors %}
-                            <div class="mt-1 space-y-1">
-                                {% for error in form.note.errors %}
-                                <p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Statut -->
-                    <div class="md:col-span-3">
-                        {% if form.note.value %}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-jungle-green-50 text-jungle-green-700 text-xs font-medium">
-                            <span class="w-1.5 h-1.5 rounded-full bg-jungle-green-500"></span>
-                            Déjà saisie
-                        </span>
-                        {% else %}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-bell-50 text-blue-bell-600 text-xs font-medium">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-bell-400"></span>
-                            À saisir
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="text-left text-xs text-blue-bell-700 uppercase tracking-wide border-b border-blue-bell-100 bg-blue-bell-50/50">
+                            <th class="py-2.5 pl-5 pr-4 font-semibold">Nom &amp; Prénoms</th>
+                            <th class="py-2.5 pr-5 font-semibold text-center">Note de conduite / 20</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-blue-bell-50">
+                        {% for form in formset %}
+                        <tr>
+                            <td class="py-2.5 pl-5 pr-4">
+                                {{ form.eleve_id }}
+                                <span class="font-medium text-blue-bell-900">{{ form.eleve_nom.value }}</span>
+                            </td>
+                            <td class="py-2.5 pr-5 text-center">
+                                <div class="relative inline-block text-left">
+                                    {{ form.note }}
+                                    {% if form.note.errors %}
+                                    <div class="mt-1 space-y-1">
+                                        {% for error in form.note.errors %}
+                                        <p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
 
             <div class="px-5 py-4 border-t border-blue-bell-100 bg-blue-bell-50/30 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
                 <p class="text-xs text-blue-bell-600 flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Laissez vide si la conduite n'est pas encore attribuée. Une note déjà saisie est mise à jour.
+                    Saisir une note (0 à 20) : une note déjà saisie est mise à jour, un champ vide supprime la conduite de l'apprenant.
                 </p>
                 <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-medium shadow-sm transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    Enregistrer les conduites
+                    Saisir les conduites
                 </button>
             </div>
         </form>
