@@ -149,3 +149,6 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Type de clé primaire par défaut
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
