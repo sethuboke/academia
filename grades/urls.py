@@ -46,6 +46,11 @@ urlpatterns = [
         name="bilan_eleve",
     ),
     path(
+        "eleves/<int:eleve_pk>/semestre/<int:semestre_pk>/saisir/",
+        views.SaisieNotesEleveView.as_view(),
+        name="saisie_notes_eleve",
+    ),
+    path(
         "classes/<int:pk>/bilan/",
         views.ClasseBilanView.as_view(),
         name="bilan_classe",

@@ -7,8 +7,38 @@
 {% block mobile_page_subtitle %}{{ eleve.nom }} {{ eleve.prenom }}{% endblock %}
 
 {% block content %}
+{% if public_mode and not eleve %}
+<div class="max-w-xl mx-auto bg-white rounded-2xl border border-blue-bell-100 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-blue-bell-100 bg-blue-bell-50">
+        <h2 class="font-semibold text-blue-bell-900">Consulter mes notes</h2>
+        <p class="text-xs text-blue-bell-600 mt-0.5">{{ classe.nom }} — {{ classe.annee_scolaire.libelle }}</p>
+    </div>
+    <form method="post" class="p-6 space-y-4">
+        {% csrf_token %}
+        <div class="space-y-1.5">
+            <label for="{{ form.nom.id_for_label }}" class="block text-sm font-medium text-blue-bell-800">Nom</label>
+            {{ form.nom }}
+            {% for error in form.nom.errors %}<p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="space-y-1.5">
+            <label for="{{ form.prenom.id_for_label }}" class="block text-sm font-medium text-blue-bell-800">Prénom</label>
+            {{ form.prenom }}
+            {% for error in form.prenom.errors %}<p class="text-xs font-medium text-lobster-pink-600">{{ error }}</p>{% endfor %}
+        </div>
+        {% if identification_invalide %}
+        <p class="text-sm font-medium text-lobster-pink-700">Aucun apprenant correspondant dans cette classe.</p>
+        {% endif %}
+        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-bell-500 hover:bg-blue-bell-600 text-white text-sm font-semibold shadow-sm transition">
+            Voir mes notes
+        </button>
+    </form>
+</div>
+{% endif %}
+
+{% if eleve %}
 <div class="space-y-6">
     <!-- Barre d'actions -->
+    {% if not public_mode %}
     <div class="flex items-center justify-between flex-wrap gap-3">
         <a href="{% url 'academics:classe_detail' classe.pk %}" class="inline-flex items-center gap-2 text-sm font-medium text-blue-bell-600 hover:text-blue-bell-800 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -18,6 +48,7 @@
             Toutes les notes (validées et non validées) sont affichées
         </span>
     </div>
+    {% endif %}
 
     <!-- Fiche élève -->
     <div class="bg-white rounded-2xl border border-blue-bell-100 shadow-sm p-5 flex items-center justify-between gap-4 flex-wrap">
@@ -38,6 +69,12 @@
         <div class="px-5 py-4 border-b border-blue-bell-100 flex items-center justify-between gap-3 flex-wrap">
             <h3 class="font-semibold text-blue-bell-900">{{ resultat.semestre.get_libelle_display }} — {{ resultat.semestre.annee_scolaire.libelle }}</h3>
             <div class="flex items-center gap-2">
+                {% if not public_mode %}
+                <a href="{% url 'grades:saisie_notes_eleve' eleve.pk resultat.semestre.pk %}" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-bell-500 text-white text-xs font-medium hover:bg-blue-bell-600 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Saisir les notes
+                </a>
+                {% endif %}
                 {% if resultat.a_notes_non_validees %}
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-saffron-50 text-saffron-700 text-xs font-medium">
                     <span class="w-1.5 h-1.5 rounded-full bg-saffron-500"></span>
@@ -170,7 +207,7 @@
         </table>
         {% else %}
         <div class="p-8 text-center">
-            <p class="text-sm text-blue-bell-600">Aucune note saisie pour ce semestre.</p>
+            <p class="text-sm text-blue-bell-600">{% if public_mode %}Aucune note validée n'est disponible pour ce semestre.{% else %}Aucune note saisie pour ce semestre.{% endif %}</p>
         </div>
         {% endif %}
     </div>
@@ -213,4 +250,5 @@
     </div>
     {% endif %}
 </div>
+{% endif %}
 {% endblock %}

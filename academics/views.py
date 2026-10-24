@@ -159,12 +159,34 @@ class ClasseDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         eleves = self.object.eleves.all()
+        semestres = list(self.object.annee_scolaire.semestres.all())
+        semestres_ordre = sorted(semestres, key=lambda s: s.libelle)
+
+        selected_semestre_id = self.request.GET.get("semestre")
+        if not selected_semestre_id:
+            selected_semestre_id = self.request.session.get(f"classe_semestre_{self.object.pk}")
+
+        selected_semestre = None
+        if selected_semestre_id:
+            selected_semestre = next(
+                (semestre for semestre in semestres_ordre if str(semestre.pk) == str(selected_semestre_id)),
+                None,
+            )
+        if selected_semestre is None and semestres_ordre:
+            selected_semestre = semestres_ordre[0]
+
+        # Memoire du semestre choisi pour la classe afin que le retour sur la
+        # fiche classe reflète la dernière sélection, même sans paramètre GET.
+        if selected_semestre is not None:
+            self.request.session[f"classe_semestre_{self.object.pk}"] = str(selected_semestre.pk)
+
         ctx["eleves"] = eleves
         # Effectifs par genre affichés avant l'effectif total sur la fiche classe.
         ctx["nb_filles"] = eleves.filter(genre=Eleve.Genre.FEMININ).count()
         ctx["nb_garcons"] = eleves.filter(genre=Eleve.Genre.MASCULIN).count()
         ctx["classe_matieres"] = self.object.classe_matieres.select_related("matiere")
-        ctx["semestres"] = self.object.annee_scolaire.semestres.all()
+        ctx["semestres"] = semestres_ordre
+        ctx["selected_semestre"] = selected_semestre
         return ctx
 
 

@@ -66,6 +66,40 @@ class DevoirGrilleForm(forms.Form):
     )
 
 
+class SaisieNotesEleveForm(forms.Form):
+    """
+    Une ligne = une matière de la classe. Les colonnes I1..I4 et D1..D2
+    permettent de saisir toutes les notes d'un élève pour un semestre.
+    """
+    classe_matiere_id = forms.IntegerField(widget=forms.HiddenInput)
+    matiere_nom = forms.CharField(disabled=True, required=False, label="Matière")
+    note_1 = forms.DecimalField(
+        max_digits=4, decimal_places=2, required=False,
+        min_value=0, max_value=20, label="I1",
+    )
+    note_2 = forms.DecimalField(
+        max_digits=4, decimal_places=2, required=False,
+        min_value=0, max_value=20, label="I2",
+    )
+    note_3 = forms.DecimalField(
+        max_digits=4, decimal_places=2, required=False,
+        min_value=0, max_value=20, label="I3",
+    )
+    note_4 = forms.DecimalField(
+        max_digits=4, decimal_places=2, required=False,
+        min_value=0, max_value=20, label="I4",
+    )
+    devoir_1 = forms.DecimalField(
+        max_digits=4, decimal_places=2, required=False,
+        min_value=0, max_value=20, label="D1",
+    )
+    devoir_2 = forms.DecimalField(
+        max_digits=4, decimal_places=2, required=False,
+        min_value=0, max_value=20, label="D2",
+    )
+
+
 NoteFormSet = formset_factory(NoteEntryForm, extra=0)
 InterrogationGrilleFormSet = formset_factory(InterrogationGrilleForm, extra=0)
 DevoirGrilleFormSet = formset_factory(DevoirGrilleForm, extra=0)
+SaisieNotesEleveFormSet = formset_factory(SaisieNotesEleveForm, extra=0)

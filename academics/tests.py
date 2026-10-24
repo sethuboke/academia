@@ -3,7 +3,7 @@ from django.contrib.messages import get_messages
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import AnneeScolaire, Classe, Eleve
+from .models import AnneeScolaire, Classe, ClasseMatiere, Eleve, Matiere, Semestre
 
 
 class EleveBulkCreateTests(TestCase):
@@ -118,6 +118,24 @@ class EleveBulkCreateTests(TestCase):
         eleve = Eleve.objects.get()
         self.assertEqual(eleve.nom, "KOFFI")
         self.assertEqual(eleve.prenom, "Abla")
+
+    def test_classe_detail_affiche_selecteur_semestre_sans_libelle_s1_s2(self):
+        semestre_1 = Semestre.objects.create(annee_scolaire=self.annee, libelle=Semestre.Libelle.S1)
+        semestre_2 = Semestre.objects.create(annee_scolaire=self.annee, libelle=Semestre.Libelle.S2)
+        matiere = Matiere.objects.create(nom="Mathématiques")
+        classe_matiere = ClasseMatiere.objects.create(classe=self.classe, matiere=matiere, coefficient=2)
+
+        response = self.client.get(
+            reverse("academics:classe_detail", args=[self.classe.pk]),
+            {"semestre": semestre_1.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="semestre"')
+        self.assertContains(response, "Semestre 1")
+        self.assertContains(response, reverse("grades:releve_notes", args=[classe_matiere.pk, semestre_1.pk]))
+        self.assertNotContains(response, ">S1<")
+        self.assertNotContains(response, ">S2<")
 
     def test_ligne_invalide_affiche_erreur_sans_creer(self):
         url = reverse("academics:eleve_bulk_create", args=[self.classe.pk])

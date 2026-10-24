@@ -220,6 +220,30 @@ class ValiderConduitesViewTests(ConduiteBaseTestCase):
         self.assertIsNotNone(c1.date_validation)
         self.assertTrue(c2.valide)
 
+
+class SaisieNotesEleveViewTests(ConduiteBaseTestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        self.client.force_login(User.objects.create_user("prof", password="x"))
+
+    def test_page_bilan_eleve_affiche_bouton_saisie_notes(self):
+        response = self.client.get(reverse("grades:bilan_eleve", args=[self.eleve1.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Saisir les notes")
+
+    def test_saisie_notes_eleve_affiche_tableau_matiere_interros_devoirs(self):
+        url = reverse("grades:saisie_notes_eleve", args=[self.eleve1.pk, self.semestre.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Mathématiques")
+        self.assertContains(response, "I1")
+        self.assertContains(response, "I2")
+        self.assertContains(response, "I3")
+        self.assertContains(response, "I4")
+        self.assertContains(response, "D1")
+        self.assertContains(response, "D2")
+
     def test_conduite_validee_devient_visible_dans_la_moyenne(self):
         """Scénario complet : saisie -> validation -> entrée en compte (coef 1)."""
         self.noter(self.eleve1)

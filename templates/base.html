@@ -49,6 +49,7 @@
     {% block body %}
     <div class="min-h-screen flex flex-col md:flex-row">
         <!-- Barre latérale (desktop) -->
+        {% if not public_mode %}
         <aside class="hidden md:flex md:w-64 md:flex-col bg-blue-bell-900 text-blue-bell-100">
             <a href="{% url 'dashboard:home' %}" class="flex items-center gap-3 px-6 py-6 border-b border-blue-bell-800 hover:bg-blue-bell-800/50 transition">
                 <div class="w-10 h-10 rounded-xl bg-blue-bell-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-bell-950/50">A</div>
@@ -105,6 +106,7 @@
                 </div>
             </div>
         </aside>
+        {% endif %}
 
         <!-- Contenu principal -->
         <div class="flex-1 flex flex-col min-w-0">
@@ -113,9 +115,9 @@
                 <div class="flex items-center justify-between px-4 md:px-8 h-16">
                     <div class="flex items-center gap-3">
                         <!-- Bouton menu mobile -->
-                        <button id="menu-toggle" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-blue-bell-700 hover:bg-blue-bell-50 transition" aria-label="Ouvrir le menu">
+                        {% if not public_mode %}<button id="menu-toggle" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-blue-bell-700 hover:bg-blue-bell-50 transition" aria-label="Ouvrir le menu">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                        </button>
+                        </button>{% endif %}
                         <a href="{% url 'dashboard:home' %}" class="md:hidden flex items-center gap-2">
                             <div class="w-8 h-8 rounded-lg bg-blue-bell-500 flex items-center justify-center text-white font-bold">A</div>
                             <span class="font-bold text-blue-bell-900">Academia</span>
@@ -126,6 +128,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
+                        {% if not public_mode %}
                         <span class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-jungle-green-50 text-jungle-green-700 text-xs font-medium">
                             <span class="w-2 h-2 rounded-full bg-jungle-green-500 animate-pulse"></span>
                             {{ user.get_username }}
@@ -136,6 +139,7 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                             </button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
                 <!-- Titre pour mobile -->
@@ -146,7 +150,7 @@
             </header>
 
             <!-- Menu mobile déroulant -->
-            <div id="mobile-menu" class="md:hidden hidden bg-white border-b border-blue-bell-100 shadow-lg">
+            {% if not public_mode %}<div id="mobile-menu" class="md:hidden hidden bg-white border-b border-blue-bell-100 shadow-lg">
                 <nav class="px-4 py-4 space-y-1">
                     <a href="{% url 'academics:classe_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-blue-bell-800 hover:bg-blue-bell-50 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
@@ -174,7 +178,7 @@
                         Admin
                     </a>
                 </nav>
-            </div>
+            </div>{% endif %}
 
             <!-- Messages flash -->
             {% if messages %}
@@ -205,7 +209,7 @@
             </main>
 
             <footer class="px-4 md:px-8 py-4 border-t border-blue-bell-100">
-                <p class="text-xs text-center text-blue-bell-600">Academia &copy; {% now "Y" %} — Gestion des notes et moyennes académiques</p>
+                <p class="text-xs text-center text-blue-bell-600">Academia &copy; {% now "Y" %} — Gestion des notes et moyennes académiques · Développé par SetHub</p>
             </footer>
         </div>
     </div>

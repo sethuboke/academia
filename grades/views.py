@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import Http404
 from django.utils import timezone
 from django.views import View
 
@@ -12,6 +13,7 @@ from .forms import (
     DevoirGrilleFormSet,
     InterrogationGrilleFormSet,
     NoteFormSet,
+    SaisieNotesEleveFormSet,
 )
 from .models import Conduite, Devoir, Interrogation, MAX_INTERROS_PAR_PERIODE
 
@@ -423,6 +425,121 @@ class ReleveNotesView(LoginRequiredMixin, View):
             "lignes": lignes, "reste_a_valider": reste_a_valider,
         })
 
+def construire_bilan_eleve(eleve, seulement_validees=False):
+    """Construit le contexte partagé par le bilan administratif et public."""
+    classe = eleve.classe
+    semestres = list(classe.annee_scolaire.semestres.all())
+    resultats = []
+
+    for semestre in semestres:
+        lignes = []
+        for cm in classe.classe_matieres.select_related("matiere"):
+            interros = Interrogation.objects.filter(
+                eleve=eleve, classe_matiere=cm, semestre=semestre
+            ).order_by("date_saisie", "pk")
+            devoirs = Devoir.objects.filter(
+                eleve=eleve, classe_matiere=cm, semestre=semestre
+            ).order_by("numero")
+            if seulement_validees:
+                interros = interros.filter(valide=True)
+                devoirs = devoirs.filter(valide=True)
+
+            interros_cells = [
+                {"note": i.note, "valide": i.valide} for i in interros
+            ]
+            interros_cells += [None] * (
+                MAX_INTERROS_PAR_PERIODE - len(interros_cells)
+            )
+            devoirs_par_numero = {d.numero: d for d in devoirs}
+            devoirs_cells = [
+                (
+                    {"note": devoirs_par_numero[numero].note,
+                     "valide": devoirs_par_numero[numero].valide}
+                    if numero in devoirs_par_numero else None
+                )
+                for numero in (1, 2)
+            ]
+            lignes.append({
+                "matiere": cm.matiere.nom,
+                "coefficient": cm.coefficient,
+                "interros_cells": interros_cells,
+                "devoirs_cells": devoirs_cells,
+                "moy_i": aggregations.moy_i_eleve_matiere_semestre(
+                    eleve, cm, semestre, seulement_validees=seulement_validees
+                ),
+                "moy_m": aggregations.moy_m_eleve_matiere_semestre(
+                    eleve, cm, semestre, seulement_validees=seulement_validees
+                ),
+                "moy_mc": aggregations.moy_mc_eleve_matiere_semestre(
+                    eleve, cm, semestre, seulement_validees=seulement_validees
+                ),
+                "a_non_validees": (
+                    not seulement_validees
+                    and (
+                        interros.filter(valide=False).exists()
+                        or devoirs.filter(valide=False).exists()
+                    )
+                ),
+            })
+
+        conduites = eleve.conduites.filter(semestre=semestre)
+        if seulement_validees:
+            conduites = conduites.filter(valide=True)
+        conduite = conduites.first()
+        rangs = aggregations.rangs_semestriels_classe(classe, semestre)
+        rang = (
+            {"rang": rangs[eleve.pk], "total": len(rangs)}
+            if eleve.pk in rangs else None
+        )
+        total_coefficients = sum(ligne["coefficient"] for ligne in lignes)
+        mc_pertinentes = [
+            ligne["moy_mc"] for ligne in lignes if ligne["moy_mc"] is not None
+        ]
+        if conduite:
+            total_coefficients += Conduite.COEFFICIENT
+            mc_pertinentes.append(conduite.note)
+        resultats.append({
+            "semestre": semestre,
+            "lignes": lignes,
+            "total_coefficients": total_coefficients,
+            "total_moy_mc": sum(mc_pertinentes) if mc_pertinentes else None,
+            "conduite": conduite.note if conduite else None,
+            "conduite_validee": conduite.valide if conduite else False,
+            "moyenne": aggregations.moy_semestre_eleve(
+                eleve, semestre, seulement_validees=seulement_validees
+            ),
+            "rang": rang,
+            "a_notes_non_validees": any(
+                ligne["a_non_validees"] for ligne in lignes
+            ) or (conduite is not None and not conduite.valide),
+        })
+
+    rang_annuel = None
+    if len(semestres) >= 2:
+        moy_annuelle = aggregations.moy_annuelle_eleve(
+            eleve, semestres[0], semestres[1],
+            seulement_validees=seulement_validees,
+        )
+        rangs_annuels = aggregations.rangs_annuels_classe(
+            classe, semestres[0], semestres[1]
+        )
+        if eleve.pk in rangs_annuels:
+            rang_annuel = {
+                "rang": rangs_annuels[eleve.pk],
+                "total": len(rangs_annuels),
+            }
+    else:
+        moy_annuelle = None
+
+    return {
+        "eleve": eleve,
+        "classe": classe,
+        "resultats": resultats,
+        "moy_annuelle": moy_annuelle,
+        "rang_annuel": rang_annuel,
+    }
+
+
 class BilanEleveView(LoginRequiredMixin, View):
     """
     Bilan complet d'un élève côté administration : toutes les matières,
@@ -441,120 +558,165 @@ class BilanEleveView(LoginRequiredMixin, View):
         eleve = get_object_or_404(
             Eleve.objects.select_related("classe", "classe__annee_scolaire"), pk=pk
         )
-        classe = eleve.classe
-        semestres = list(classe.annee_scolaire.semestres.all())
+        return render(request, self.template_name, construire_bilan_eleve(eleve))
 
-        resultats = []
-        for semestre in semestres:
-            lignes = []
-            for cm in classe.classe_matieres.select_related("matiere"):
-                interros = Interrogation.objects.filter(
+
+class SaisieNotesEleveView(LoginRequiredMixin, View):
+    """
+    Saisie rapide des notes d'un élève pour un semestre donné.
+
+    Le formulaire affiche une ligne par matière affectée à la classe, avec
+    les colonnes I1..I4 et D1..D2. La vue écrit directement les objets
+    Interrogation et Devoir correspondants.
+    """
+
+    template_name = "grades/saisie_notes_eleve.html"
+
+    def _get_eleve_et_semestre(self, eleve_pk, semestre_pk):
+        eleve = get_object_or_404(
+            Eleve.objects.select_related("classe", "classe__annee_scolaire"),
+            pk=eleve_pk,
+        )
+        semestre = get_object_or_404(Semestre, pk=semestre_pk)
+        if semestre.annee_scolaire_id != eleve.classe.annee_scolaire_id:
+            raise Http404("Ce semestre n'appartient pas à l'année scolaire de la classe.")
+        return eleve, semestre
+
+    def _build_initial(self, eleve, semestre):
+        initial = []
+        for cm in eleve.classe.classe_matieres.select_related("matiere").order_by("matiere__nom"):
+            interros = list(
+                Interrogation.objects.filter(
                     eleve=eleve, classe_matiere=cm, semestre=semestre
-                ).order_by("date_saisie")
-                devoirs = Devoir.objects.filter(
+                ).order_by("date_saisie", "pk")
+            )
+            devoirs = dict(
+                Devoir.objects.filter(
                     eleve=eleve, classe_matiere=cm, semestre=semestre
-                ).order_by("numero")
-
-                # Toutes les matières de la classe sont affichées ; une
-                # matière sans note aura simplement des tirets (moyennes
-                # à None) et n'entrera pas dans le total des MC.
-
-                # Affichage en colonnes : une case par interrogation
-                # (I1 à I4, complétées par des cases vides) puis D1 et D2,
-                # chacune avec son statut de validation.
-                interros_cells = [
-                    {"note": i.note, "valide": i.valide} for i in interros
-                ]
-                interros_cells += [None] * (
-                    MAX_INTERROS_PAR_PERIODE - len(interros_cells)
+                ).values_list("numero", "note")
+            )
+            donnees = {
+                "classe_matiere_id": cm.pk,
+                "matiere_nom": cm.matiere.nom,
+            }
+            for position in range(1, MAX_INTERROS_PAR_PERIODE + 1):
+                donnees[f"note_{position}"] = (
+                    interros[position - 1].note if position <= len(interros) else None
                 )
-                devoirs_par_numero = {d.numero: d for d in devoirs}
-                devoirs_cells = []
-                for numero in (1, 2):
-                    devoir = devoirs_par_numero.get(numero)
-                    devoirs_cells.append(
-                        {"note": devoir.note, "valide": devoir.valide}
-                        if devoir else None
-                    )
+            donnees["devoir_1"] = devoirs.get(1)
+            donnees["devoir_2"] = devoirs.get(2)
+            initial.append(donnees)
+        return initial
 
-                lignes.append({
-                    "matiere": cm.matiere.nom,
-                    "coefficient": cm.coefficient,
-                    "interros_cells": interros_cells,
-                    "devoirs_cells": devoirs_cells,
-                    # Toutes les notes sont prises en compte pour l'admin.
-                    "moy_i": aggregations.moy_i_eleve_matiere_semestre(
-                        eleve, cm, semestre, seulement_validees=False
-                    ),
-                    "moy_m": aggregations.moy_m_eleve_matiere_semestre(
-                        eleve, cm, semestre, seulement_validees=False
-                    ),
-                    "moy_mc": aggregations.moy_mc_eleve_matiere_semestre(
-                        eleve, cm, semestre, seulement_validees=False
-                    ),
-                    "a_non_validees": (
-                        interros.filter(valide=False).exists()
-                        or devoirs.filter(valide=False).exists()
-                    ),
-                })
+    def _save_ligne(self, eleve, classe_matiere, semestre, donnees):
+        nb_ok = 0
+        nb_suppr = 0
 
-            conduite = eleve.conduites.filter(semestre=semestre).first()
-            rangs = aggregations.rangs_semestriels_classe(classe, semestre)
-            rang = None
-            if eleve.pk in rangs:
-                rang = {"rang": rangs[eleve.pk], "total": len(rangs)}
-            # Totaux du tableau : Σ coefficients et Σ moyennes coefficiées
-            # des matières affichées, plus la conduite (coefficient 1, sa
-            # note joue le rôle d'une moyenne déjà coefficiée) lorsqu'elle
-            # est saisie. Les matières sans note (moy_mc=None) sont exclues
-            # du total des MC, comme dans moyenne_semestre.
-            total_coefficients = sum(l["coefficient"] for l in lignes)
-            mc_pertinentes = [l["moy_mc"] for l in lignes if l["moy_mc"] is not None]
-            if conduite:
-                total_coefficients += Conduite.COEFFICIENT
-                mc_pertinentes.append(conduite.note)
-            total_moy_mc = (
-                sum(mc_pertinentes) if mc_pertinentes else None
+        existantes = list(
+            Interrogation.objects.filter(
+                eleve=eleve, classe_matiere=classe_matiere, semestre=semestre
+            ).order_by("date_saisie", "pk")
+        )
+        saisies = [donnees.get(f"note_{p}") for p in range(1, MAX_INTERROS_PAR_PERIODE + 1)]
+        saisies = [n for n in saisies if n is not None]
+        for position, interro in enumerate(existantes):
+            if position < len(saisies):
+                if interro.note != saisies[position]:
+                    interro.note = saisies[position]
+                    interro.valide = False
+                    interro.date_validation = None
+                    interro.save()
+                    nb_ok += 1
+            else:
+                interro.delete()
+                nb_suppr += 1
+        for note in saisies[len(existantes):]:
+            Interrogation.objects.create(
+                eleve=eleve,
+                classe_matiere=classe_matiere,
+                semestre=semestre,
+                note=note,
             )
+            nb_ok += 1
 
-            resultats.append({
-                "semestre": semestre,
-                "lignes": lignes,
-                "total_coefficients": total_coefficients,
-                "total_moy_mc": total_moy_mc,
-                "conduite": conduite.note if conduite else None,
-                "conduite_validee": conduite.valide if conduite else False,
-                "moyenne": aggregations.moy_semestre_eleve(
-                    eleve, semestre, seulement_validees=False
-                ),
-                "rang": rang,
-                "a_notes_non_validees": any(l["a_non_validees"] for l in lignes)
-                or (conduite is not None and not conduite.valide),
-            })
+        for numero, champ in ((1, "devoir_1"), (2, "devoir_2")):
+            note = donnees.get(champ)
+            existant = Devoir.objects.filter(
+                eleve=eleve,
+                classe_matiere=classe_matiere,
+                semestre=semestre,
+                numero=numero,
+            ).first()
+            if note is None:
+                if existant:
+                    existant.delete()
+                    nb_suppr += 1
+                continue
+            if existant:
+                if existant.note != note:
+                    existant.note = note
+                    existant.valide = False
+                    existant.date_validation = None
+                    existant.save()
+                    nb_ok += 1
+            else:
+                Devoir.objects.create(
+                    eleve=eleve,
+                    classe_matiere=classe_matiere,
+                    semestre=semestre,
+                    numero=numero,
+                    note=note,
+                )
+                nb_ok += 1
 
-        # Moyenne annuelle + rang annuel
-        rang_annuel = None
-        if len(semestres) >= 2:
-            moy_annuelle = aggregations.moy_annuelle_eleve(
-                eleve, semestres[0], semestres[1], seulement_validees=False
-            )
-            rangs_annuels = aggregations.rangs_annuels_classe(
-                classe, semestres[0], semestres[1]
-            )
-            if eleve.pk in rangs_annuels:
-                rang_annuel = {
-                    "rang": rangs_annuels[eleve.pk],
-                    "total": len(rangs_annuels),
-                }
-        else:
-            moy_annuelle = None
+        return nb_ok, nb_suppr
 
+    def get(self, request, eleve_pk, semestre_pk):
+        eleve, semestre = self._get_eleve_et_semestre(eleve_pk, semestre_pk)
+        formset = SaisieNotesEleveFormSet(initial=self._build_initial(eleve, semestre))
         return render(request, self.template_name, {
             "eleve": eleve,
-            "classe": classe,
-            "resultats": resultats,
-            "moy_annuelle": moy_annuelle,
-            "rang_annuel": rang_annuel,
+            "classe": eleve.classe,
+            "semestre": semestre,
+            "formset": formset,
+        })
+
+    def post(self, request, eleve_pk, semestre_pk):
+        eleve, semestre = self._get_eleve_et_semestre(eleve_pk, semestre_pk)
+        formset = SaisieNotesEleveFormSet(request.POST, initial=self._build_initial(eleve, semestre))
+        if formset.is_valid():
+            erreurs = []
+            nb_enregistrees = 0
+            nb_supprimees = 0
+            for form in formset:
+                classe_matiere_id = form.cleaned_data.get("classe_matiere_id")
+                if classe_matiere_id is None:
+                    continue
+                classe_matiere = get_object_or_404(
+                    ClasseMatiere.objects.select_related("matiere", "classe"),
+                    pk=classe_matiere_id,
+                )
+                if classe_matiere.classe_id != eleve.classe_id:
+                    erreurs.append(f"Matière invalide pour {eleve}.")
+                    continue
+                try:
+                    crees, suppr = self._save_ligne(eleve, classe_matiere, semestre, form.cleaned_data)
+                    nb_enregistrees += crees
+                    nb_supprimees += suppr
+                except Exception as exc:
+                    erreurs.append(f"{classe_matiere.matiere.nom} : {exc}")
+            if nb_enregistrees:
+                messages.success(request, f"{nb_enregistrees} note(s) enregistrée(s).")
+            if nb_supprimees:
+                messages.success(request, f"{nb_supprimees} note(s) supprimée(s).")
+            for erreur in erreurs:
+                messages.error(request, erreur)
+            return redirect("grades:bilan_eleve", pk=eleve.pk)
+        return render(request, self.template_name, {
+            "eleve": eleve,
+            "classe": eleve.classe,
+            "semestre": semestre,
+            "formset": formset,
         })
 
 

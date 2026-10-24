@@ -49,10 +49,23 @@
             <div class="text-2xl md:text-3xl font-bold text-deep-lilac-500">{{ classe_matieres|length }}</div>
             <div class="text-xs md:text-sm text-blue-bell-600 mt-1">Matières</div>
         </div>
-        <div class="bg-white rounded-2xl border border-blue-bell-100 p-4 text-center">
-            <div class="text-2xl md:text-3xl font-bold text-jungle-green-500">{{ semestres|length }}</div>
-            <div class="text-xs md:text-sm text-blue-bell-600 mt-1">Semestres</div>
+        {% if semestres %}
+        <div class="bg-gradient-to-br from-blue-bell-50 to-white rounded-2xl border border-blue-bell-200 p-4 shadow-sm">
+            <form method="get" class="flex flex-col gap-3 h-full justify-center">
+                <div class="flex items-center gap-2 text-blue-bell-700">
+                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-bell-100 text-blue-bell-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </span>
+                    <label for="semestre" class="text-xs font-semibold uppercase tracking-[0.12em] text-blue-bell-600">Semestre</label>
+                </div>
+                <select id="semestre" name="semestre" onchange="this.form.submit()" class="w-full rounded-xl border border-blue-bell-200 bg-white px-3 py-2.5 text-sm font-semibold text-blue-bell-900 shadow-sm transition focus:border-blue-bell-500 focus:outline-none focus:ring-4 focus:ring-blue-bell-100 appearance-none cursor-pointer">
+                    {% for semestre in semestres %}
+                    <option value="{{ semestre.pk }}" {% if selected_semestre and selected_semestre.pk == semestre.pk %}selected{% endif %}>{{ semestre.get_libelle_display }}</option>
+                    {% endfor %}
+                </select>
+            </form>
         </div>
+        {% endif %}
     </div>
 
     <!-- Lien de consultation élève -->
@@ -99,13 +112,11 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    {% if semestres %}
-                        {% for semestre in semestres %}
-                        <a href="{% url 'grades:releve_notes' cm.pk semestre.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-xs font-medium transition" title="Notes — {{ semestre.get_libelle_display }}">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                            {{ semestre.libelle }}
-                        </a>
-                        {% endfor %}
+                    {% if selected_semestre %}
+                    <a href="{% url 'grades:releve_notes' cm.pk selected_semestre.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-bell-50 hover:bg-blue-bell-100 text-blue-bell-700 text-xs font-medium transition" title="Notes de {{ cm.matiere.nom }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        Notes
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -122,13 +133,11 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    {% if semestres %}
-                        {% for semestre in semestres %}
-                        <a href="{% url 'grades:saisie_conduite' classe.pk semestre.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-saffron-50 hover:bg-saffron-100 text-saffron-700 text-xs font-medium transition" title="Conduite — {{ semestre.get_libelle_display }}">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                            {{ semestre.libelle }}
-                        </a>
-                        {% endfor %}
+                    {% if selected_semestre %}
+                    <a href="{% url 'grades:saisie_conduite' classe.pk selected_semestre.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-saffron-50 hover:bg-saffron-100 text-saffron-700 text-xs font-medium transition" title="Saisir la conduite pour {{ selected_semestre.get_libelle_display }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        Conduite
+                    </a>
                     {% endif %}
                 </div>
             </div>
